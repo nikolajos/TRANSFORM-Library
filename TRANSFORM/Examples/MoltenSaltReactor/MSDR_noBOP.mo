@@ -529,13 +529,10 @@ parameter SI.MoleFraction Li6_molefrac = 1.0-Li7_molefrac
         extent={{10,-10},{-10,10}},
         rotation=0,
         origin={-30,-60})));
-  HeatAndMassTransfer.BoundaryConditions.Heat.Adiabatic_multi
+  TRANSFORM.HeatAndMassTransfer.BoundaryConditions.Heat.Adiabatic_multi
     reflA_lowerG_upper_bc(nPorts=reflA_lowerG.geometry.nR, showName=systemTF.showName)
                                                            annotation (
-      Placement(transformation(
-        extent={{-10,-10},{10,10}},
-        rotation=270,
-        origin={-30,-30})));
+      Placement(visible = true, transformation(origin = {-30, -30}, extent = {{-10, -10}, {10, 10}}, rotation = 270)));
   HeatAndMassTransfer.BoundaryConditions.Heat.Adiabatic_multi
     reflA_lowerG_lower_bc(nPorts=reflA_lowerG.geometry.nR, showName=systemTF.showName)
                                                            annotation (
@@ -1247,10 +1244,6 @@ parameter SI.MoleFraction Li6_molefrac = 1.0-Li7_molefrac
   Modelica.Blocks.Sources.RealExpression m_flow_pump_PFL(y=2*3*data_PHX.m_flow_tube
         /(1 - x_bypass.y))
     annotation (Placement(transformation(extent={{76,132},{56,152}})));
-protected
-  Modelica.Blocks.Sources.RealExpression boundary_OffGas_T1(y=drainTank_liquid.port_a.m_flow)
-    annotation (Placement(transformation(extent={{-222,-52},{-202,-32}})));
-public
   TRANSFORM.Media.ClosureModels.HenrysLawCoefficient.Models.ExponentialTemperature
     kH_PHX_tubeSide[PHX.geometry.nV](
     T=PHX.tube.mediums.T,
@@ -1315,7 +1308,6 @@ public
         extent={{10,-10},{-10,10}},
         rotation=90,
         origin={-42,30})));
-public
   TRANSFORM.Media.ClosureModels.HenrysLawCoefficient.Models.ExponentialTemperature
     kH_core[fuelCell.geometry.nV](each iTable={1}, T=fuelCell.mediums.T)
     annotation (Placement(transformation(extent={{-100,-160},{-80,-140}})));
@@ -1351,21 +1343,18 @@ public
     Ka=kH_reflR.kHs,
     Kb=kS_reflRG.kSs)
     annotation (Placement(transformation(extent={{28,-8},{36,0}})));
-public
   TRANSFORM.Media.ClosureModels.HenrysLawCoefficient.Models.ExponentialTemperature
     kH_reflR[reflR.geometry.nV](each iTable={1}, T=reflR.mediums.T)
     annotation (Placement(transformation(extent={{-100,-180},{-80,-160}})));
   TRANSFORM.Media.ClosureModels.SievertsLawCoefficient.Models.ArrheniusEquation
     kS_reflRG[reflR.geometry.nV](each iTable={11}, T=reflR.mediums.T)
     annotation (Placement(transformation(extent={{-60,-180},{-40,-160}})));
-public
   TRANSFORM.Media.ClosureModels.HenrysLawCoefficient.Models.ExponentialTemperature
     kH_reflA_upper[reflA_upper.geometry.nV](each iTable={1}, T=reflA_upper.mediums.T)
     annotation (Placement(transformation(extent={{-100,-200},{-80,-180}})));
   TRANSFORM.Media.ClosureModels.SievertsLawCoefficient.Models.ArrheniusEquation
     kS_reflAG_upper[reflA_upper.geometry.nV](each iTable={11}, T=reflA_upper.mediums.T)
     annotation (Placement(transformation(extent={{-60,-200},{-40,-180}})));
-public
   TRANSFORM.Media.ClosureModels.HenrysLawCoefficient.Models.ExponentialTemperature
     kH_reflA_lower[reflA_lower.geometry.nV](each iTable={1}, T=reflA_lower.mediums.T)
     annotation (Placement(transformation(extent={{-100,-220},{-80,-200}})));
@@ -1398,12 +1387,8 @@ public
     Ka=kH_reflA_upper.kHs,
     Kb=kS_reflAG_upper.kSs)
     annotation (Placement(transformation(extent={{-8,42},{-16,50}})));
-  TRANSFORM.HeatAndMassTransfer.BoundaryConditions.Mass.AdiabaticMass_multi
-    reflA_lowerG_upper_bcM(showName=systemTF.showName, nPorts=reflA_lowerG.geometry.nR)
-    annotation (Placement(transformation(
-        extent={{10,-10},{-10,10}},
-        rotation=90,
-        origin={-42,-30})));
+  TRANSFORM.HeatAndMassTransfer.BoundaryConditions.Mass.AdiabaticMass_multi reflA_lowerG_upper_bcM(showName = systemTF.showName, nPorts = reflA_lowerG.geometry.nR) annotation(
+    Placement(visible = true, transformation(origin = {-42, -30}, extent = {{10, -10}, {-10, 10}}, rotation = 90)));
   TRANSFORM.HeatAndMassTransfer.BoundaryConditions.Mass.AdiabaticMass_multi
     reflA_lowerG_lower_bcM(showName=systemTF.showName, nPorts=reflA_lowerG.geometry.nR)
     annotation (Placement(transformation(
@@ -1424,6 +1409,9 @@ public
     Ka=kH_reflA_lower.kHs,
     Kb=kS_reflAG_lower.kSs)
     annotation (Placement(transformation(extent={{-8,-78},{-16,-70}})));
+protected
+  Modelica.Blocks.Sources.RealExpression    boundary_OffGas_T1(y=drainTank_liquid.port_a.m_flow)
+    annotation (Placement(transformation(extent={{-222,-52},{-202,-32}})));
 equation
   connect(resistance_fuelCell_outlet.port_a, fuelCell.port_b)
     annotation (Line(points={{0,23},{0,10},{4.44089e-16,10}},
@@ -1457,8 +1445,8 @@ equation
     annotation (Line(points={{-20,60},{-5,60}}, color={191,0,0}));
   connect(reflA_lowerG_lower_bc.port, reflA_lowerG.port_a2)
     annotation (Line(points={{-30,-80},{-30,-70}}, color={191,0,0}));
-  connect(reflA_lowerG_upper_bc.port, reflA_lowerG.port_b2)
-    annotation (Line(points={{-30,-40},{-30,-50}}, color={191,0,0}));
+  connect(reflA_lowerG_upper_bc.port, reflA_lowerG.port_b2) annotation(
+    Line(points = {{-30, -40}, {-30, -50}}, color = {191, 0, 0}));
   connect(reflA_lowerG.port_a1, reflA_lower.heatPorts[:, 1])
     annotation (Line(points={{-20,-60},{-5,-60}}, color={191,0,0}));
   connect(reflA_upperG.port_b1, reflA_upper.heatPorts[:, 2]) annotation (Line(
@@ -1617,8 +1605,8 @@ equation
       Line(points={{-14.8,46},{-44,46},{-44,56},{-40,56}}, color={0,140,72}));
   connect(reflA_lowerG_lower_bcM.port, reflA_lowerG.portM_a2) annotation (Line(
         points={{-42,-80},{-42,-76},{-34,-76},{-34,-69.8}}, color={0,140,72}));
-  connect(reflA_lowerG_upper_bcM.port, reflA_lowerG.portM_b2) annotation (Line(
-        points={{-42,-40},{-42,-44},{-34,-44},{-34,-50}}, color={0,140,72}));
+  connect(reflA_lowerG_upper_bcM.port, reflA_lowerG.portM_b2) annotation(
+    Line(points = {{-42, -40}, {-42, -44}, {-34, -44}, {-34, -50}}, color = {0, 140, 72}));
   connect(interface_reflA_lower2.port_b, reflA_lowerG.portM_b1) annotation (
       Line(points={{-14.8,-74},{-40,-74},{-40,-64}}, color={0,140,72}));
   connect(interface_reflA_lower1.port_a, reflA_lower.massPorts[:, 1])
@@ -1631,96 +1619,25 @@ equation
   annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-360,
             -220},{340,180}})),                                  Diagram(
         coordinateSystem(preserveAspectRatio=false, extent={{-360,-220},{340,
-            180}}), graphics={
-        Text(
-          extent={{188,-106},{312,-120}},
-          lineColor={0,0,0},
-          textString="Heat Exchanger Temperature Profiles",
-          textStyle={TextStyle.Bold,TextStyle.UnderLine}),
-        Text(
-          extent={{-33,5},{33,-5}},
-          lineColor={0,0,0},
-          origin={167,-173},
-          rotation=90,
-          textString="Temperature [K]"),
-        Text(
-          extent={{154,-126},{266,-136}},
-          lineColor={0,0,0},
-          textStyle={TextStyle.Bold,TextStyle.UnderLine},
-          textString="Primary Fuel HX"),
-        Text(
-          extent={{240,-126},{352,-136}},
-          lineColor={0,0,0},
-          textStyle={TextStyle.Bold,TextStyle.UnderLine},
-          textString="Primary Coolant HX"),
-        Text(
-          extent={{-33,5},{33,-5}},
-          lineColor={0,0,0},
-          origin={253,-215},
-          rotation=0,
-          textString="Position"),
-        Text(
-          extent={{-290,-132},{-248,-140}},
-          lineColor={0,0,0},
-          textString="PHX",
-          textStyle={TextStyle.Bold,TextStyle.UnderLine}),
-        Text(
-          extent={{-312,-146},{-270,-154}},
-          lineColor={0,0,0},
-          textString="Fluid"),
-        Text(
-          extent={{-270,-146},{-228,-154}},
-          lineColor={0,0,0},
-          textString="Wall"),
-        Text(
-          extent={{-190,-146},{-148,-154}},
-          lineColor={0,0,0},
-          textString="Fluid"),
-        Text(
-          extent={{-232,-146},{-190,-154}},
-          lineColor={0,0,0},
-          textString="Wall"),
-        Text(
-          extent={{-210,-132},{-168,-140}},
-          lineColor={0,0,0},
-          textStyle={TextStyle.Bold,TextStyle.UnderLine},
-          textString="SHX"),
-        Text(
-          extent={{-350,-168},{-308,-176}},
-          lineColor={0,0,0},
-          textString="Tube side"),
-        Text(
-          extent={{-350,-186},{-308,-194}},
-          lineColor={0,0,0},
-          textString="Shell side"),
-        Text(
-          extent={{-112,-126},{-70,-134}},
-          lineColor={0,0,0},
-          textString="Fluid"),
-        Text(
-          extent={{-70,-126},{-28,-134}},
-          lineColor={0,0,0},
-          textString="Wall"),
-        Text(
-          extent={{-154,-146},{-112,-154}},
-          lineColor={0,0,0},
-          textStyle={TextStyle.Bold,TextStyle.UnderLine},
-          textString="Core"),
-        Text(
-          extent={{-154,-166},{-112,-174}},
-          lineColor={0,0,0},
-          textStyle={TextStyle.Bold,TextStyle.UnderLine},
-          textString="ReflR"),
-        Text(
-          extent={{-154,-184},{-112,-192}},
-          lineColor={0,0,0},
-          textStyle={TextStyle.Bold,TextStyle.UnderLine},
-          textString="ReflA_upper"),
-        Text(
-          extent={{-154,-200},{-112,-208}},
-          lineColor={0,0,0},
-          textStyle={TextStyle.Bold,TextStyle.UnderLine},
-          textString="ReflA_lower")}),
+            180}}), graphics={Text(extent = {{188, -106}, {312, -120}}, textString = "Heat Exchanger Temperature Profiles", textStyle = {TextStyle.Bold, TextStyle.UnderLine}),
+        Text(origin = {167, -173}, rotation = 90, extent = {{-33, 5}, {33, -5}}, textString = "Temperature [K]"),
+        Text(extent = {{154, -126}, {266, -136}}, textString = "Primary Fuel HX", textStyle = {TextStyle.Bold, TextStyle.UnderLine}),
+        Text(extent = {{240, -126}, {352, -136}}, textString = "Primary Coolant HX", textStyle = {TextStyle.Bold, TextStyle.UnderLine}),
+        Text(origin = {253, -215}, extent = {{-33, 5}, {33, -5}}, textString = "Position"),
+        Text(extent = {{-290, -132}, {-248, -140}}, textString = "PHX", textStyle = {TextStyle.Bold, TextStyle.UnderLine}),
+        Text(extent = {{-312, -146}, {-270, -154}}, textString = "Fluid"),
+        Text(extent = {{-270, -146}, {-228, -154}}, textString = "Wall"),
+        Text(extent = {{-190, -146}, {-148, -154}}, textString = "Fluid"),
+        Text(extent = {{-232, -146}, {-190, -154}}, textString = "Wall"),
+        Text(extent = {{-210, -132}, {-168, -140}}, textString = "SHX", textStyle = {TextStyle.Bold, TextStyle.UnderLine}),
+        Text(extent = {{-350, -168}, {-308, -176}}, textString = "Tube side"),
+        Text(extent = {{-350, -186}, {-308, -194}}, textString = "Shell side"),
+        Text(extent = {{-112, -126}, {-70, -134}}, textString = "Fluid"),
+        Text(extent = {{-70, -126}, {-28, -134}}, textString = "Wall"),
+        Text(extent = {{-154, -146}, {-112, -154}}, textString = "Core", textStyle = {TextStyle.Bold, TextStyle.UnderLine}),
+        Text(extent = {{-154, -166}, {-112, -174}}, textString = "ReflR", textStyle = {TextStyle.Bold, TextStyle.UnderLine}),
+        Text(extent = {{-154, -184}, {-112, -192}}, textString = "ReflA_upper", textStyle = {TextStyle.Bold, TextStyle.UnderLine}),
+        Text(extent = {{-154, -200}, {-112, -208}}, textString = "ReflA_lower", textStyle = {TextStyle.Bold, TextStyle.UnderLine})}),
     experiment(
       StopTime=10000,
       __Dymola_NumberOfIntervals=5000,

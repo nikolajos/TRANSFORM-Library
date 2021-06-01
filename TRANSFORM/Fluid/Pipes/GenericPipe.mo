@@ -341,7 +341,7 @@ model GenericPipe
   // Visualization
   parameter Boolean showName = true annotation(Dialog(tab="Visualization"));
   parameter Boolean showDesignFlowDirection = true annotation(Dialog(tab="Visualization"));
-  extends TRANSFORM.Utilities.Visualizers.IconColorMap(showColors=systemTF.showColors, val_min=systemTF.val_min,val_max=systemTF.val_max, val=summary.T_effective);
+  //extends TRANSFORM.Utilities.Visualizers.IconColorMap(showColors=systemTF.showColors, val_min=systemTF.val_min,val_max=systemTF.val_max, val=summary.T_effective);
 protected
   HeatAndMassTransfer.Interfaces.HeatPort_State[nV] heatPorts_int;
   Medium.ThermodynamicState[nFM + 1] statesFM "state vector for flowModel model";

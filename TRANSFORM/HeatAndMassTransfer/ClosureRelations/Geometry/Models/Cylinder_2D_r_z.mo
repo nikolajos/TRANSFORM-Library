@@ -19,17 +19,17 @@ model Cylinder_2D_r_z
     annotation (Dialog(group="Inputs"));
   input SI.Length length_z=1 "Specify overall length or dzs in z-dimension"
     annotation (Dialog(group="Inputs"));
-  input SI.Length drs[nR,nZ](min=0) = fill(
+  input SI.Length drs[nR,nZ](min=fill(0,nR,nZ)) = fill(
     (r_outer - r_inner)/nR,
     nR,
     nZ) "Unit volume lengths of r-dimension"
     annotation (Dialog(group="Inputs"));
-  input SI.Angle dthetas[nR,nZ](min=0) = fill(
+  input SI.Angle dthetas[nR,nZ](min=fill(0,nR,nZ)) = fill(
     angle_theta,
     nR,
     nZ) "Unit volume lengths of theta-dimension"
     annotation (Dialog(group="Inputs"));
-  input SI.Length dzs[nR,nZ](min=0) = fill(
+  input SI.Length dzs[nR,nZ](min=fill(0,nR,nZ)) = fill(
     (length_z)/nZ,
     nR,
     nZ) "Unit volume lengths of z-dimension"

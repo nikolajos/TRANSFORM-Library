@@ -340,7 +340,7 @@ model GenericPipe_MultiTransferSurface
   // Visualization
   parameter Boolean showName = true annotation(Dialog(tab="Visualization"));
   parameter Boolean showDesignFlowDirection = true annotation(Dialog(tab="Visualization"));
-  extends TRANSFORM.Utilities.Visualizers.IconColorMap(showColors=systemTF.showColors, val_min=systemTF.val_min,val_max=systemTF.val_max, val=summary.T_effective);
+  //extends TRANSFORM.Utilities.Visualizers.IconColorMap(showColors=systemTF.showColors, val_min=systemTF.val_min,val_max=systemTF.val_max, val=summary.T_effective);
   parameter Boolean calc_Wb = true "= false to not calculate p*der(V) [Wb_flows] for energy equation" annotation(Dialog(tab="Advanced"));
 protected
   HeatAndMassTransfer.Interfaces.HeatPort_State[nV,geometry.nSurfaces] heatPorts_int;

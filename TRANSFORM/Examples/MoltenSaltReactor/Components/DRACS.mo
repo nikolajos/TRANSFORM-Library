@@ -54,9 +54,9 @@ model DRACS
     use_HeatTransfer=true,
     redeclare model HeatTransfer =
         Fluid.ClosureRelations.HeatTransfer.Models.DistributedPipe_1D_MultiTransferSurface.Nus_SinglePhase_2Region,
-    showColors=true,
+    /*showColors=true,
     val_min=data_OFFGAS.T_cold_dracs,
-    val_max=data_OFFGAS.T_hot_dracs,
+    val_max=data_OFFGAS.T_hot_dracs,*/
     T_a_start=data_OFFGAS.T_cold_dracs,
     T_b_start=data_OFFGAS.T_hot_dracs,
     showName=false)                    annotation (Placement(transformation(
@@ -100,9 +100,9 @@ model DRACS
     redeclare package Medium = Medium_DRACS,
     m_flow_a_start=data_OFFGAS.m_flow_hot_dracs,
     T_a_start=data_OFFGAS.T_hot_dracs,
-    showColors=true,
+    /*showColors=true,
     val_min=data_OFFGAS.T_cold_dracs,
-    val_max=data_OFFGAS.T_hot_dracs,
+    val_max=data_OFFGAS.T_hot_dracs,*/
     redeclare model Geometry =
         Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe
         (
@@ -120,9 +120,9 @@ model DRACS
     redeclare model HeatTransfer =
         Fluid.ClosureRelations.HeatTransfer.Models.DistributedPipe_1D_MultiTransferSurface.Nus_SinglePhase_2Region,
     nParallel=data_OFFGAS.nThimbles_waterTank*data_OFFGAS.nWaterTanks,
-    showColors=true,
+    /*showColors=true,
     val_min=data_OFFGAS.T_cold_dracs,
-    val_max=data_OFFGAS.T_hot_dracs,
+    val_max=data_OFFGAS.T_hot_dracs,*/
     T_a_start=data_OFFGAS.T_hot_dracs,
     T_b_start=data_OFFGAS.T_cold_dracs,
     showName=false,
@@ -185,9 +185,9 @@ model DRACS
   Fluid.Pipes.GenericPipe_MultiTransferSurface downcomer_DRACS(
     redeclare package Medium = Medium_DRACS,
     m_flow_a_start=data_OFFGAS.m_flow_cold_dracs,
-    showColors=true,
+/*    //showColors=true,
     val_min=data_OFFGAS.T_cold_dracs,
-    val_max=data_OFFGAS.T_hot_dracs,
+    val_max=data_OFFGAS.T_hot_dracs,*/
     T_a_start=data_OFFGAS.T_cold_dracs,
     redeclare model Geometry =
         Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe

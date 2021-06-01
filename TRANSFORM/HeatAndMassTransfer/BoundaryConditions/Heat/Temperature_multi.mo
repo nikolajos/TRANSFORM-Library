@@ -5,11 +5,11 @@ model Temperature_multi "Temperature boundary condition in Kelvin"
   annotation(Evaluate=true, HideResult=true, choices(checkBox=true));
   parameter SI.Temperature T[nPorts]=fill(293.15,nPorts) "Fixed temperature at port"             annotation(Dialog(                        enable=not use_port));
   parameter Boolean showName = true annotation(Dialog(tab="Visualization"));
-  Modelica.Blocks.Interfaces.RealInput T_ext[nPorts](unit="K") if use_port  annotation (Placement(transformation(
+  Modelica.Blocks.Interfaces.RealInput T_ext[nPorts](each unit="K") if use_port  annotation (Placement(transformation(
           extent={{-60,-20},{-20,20}}), iconTransformation(extent={{-60,-20},
             {-20,20}})));
 protected
-    Modelica.Blocks.Interfaces.RealInput T_int[nPorts](unit="K");
+    Modelica.Blocks.Interfaces.RealInput T_int[nPorts](each unit="K");
 public
   Interfaces.HeatPort_State port[nPorts] annotation (Placement(transformation(extent={{
             90,-10},{110,10}}), iconTransformation(extent={{90,-10},{110,10}})));
