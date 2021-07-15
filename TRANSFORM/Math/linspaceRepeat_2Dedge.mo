@@ -26,7 +26,7 @@ algorithm
       n2,
       exposeState);
   end for;
-  annotation (smoothOrder=2, Documentation(info="<html>
+  annotation (Inline = true, smoothOrder=2, Documentation(info="<html>
 <p>For example:</p>
 <p>For x1=fill(0,m), x2=fill(10,m), x3=fill(-5,m), x4 = fill(5,m), n1=5, n2=3, and m=2.</p>
 <p>The returned matrix is y[5,3,2]. For the given input each m dimension is identical.</p>

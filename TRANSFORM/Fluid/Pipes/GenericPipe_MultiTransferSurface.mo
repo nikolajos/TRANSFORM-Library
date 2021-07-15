@@ -9,6 +9,7 @@ model GenericPipe_MultiTransferSurface
   BaseClasses.Summary summary(
     T_effective=sum(mediums.T .* ms/sum(ms)),
     T_max=max(mediums.T),
+    T_min=min(mediums.T),
     xpos_norm=summary.xpos/sum(geometry.dlengths),
     xpos=cat(
         1,
@@ -32,10 +33,10 @@ model GenericPipe_MultiTransferSurface
   extends BaseClasses.PartialDistributedVolume(
     final Vs=geometry.Vs,
     final nV= geometry.nV,
-    ps_start=linspace_1D(
+    ps_start=linspace(
         p_a_start,
         p_b_start,nV),
-    Ts_start=linspace_1D(
+    Ts_start=linspace(
         T_a_start,
         T_b_start,nV),
     hs_start=if not use_Ts_start then linspace_1D(
@@ -45,12 +46,12 @@ model GenericPipe_MultiTransferSurface
         ps_start[i],
         Ts_start[i],
         Xs_start[i, 1:Medium.nX]) for i in 1:nV},
-    Xs_start=linspaceRepeat_1D(
+    Xs_start=transpose({linspace(X_a_start[i], X_b_start[i], nV) for i in 1:Medium.nX}) /*linspaceRepeat_1D(
         X_a_start,
-        X_b_start,nV),
-    Cs_start=linspaceRepeat_1D(
+        X_b_start,nV)*/,
+    Cs_start=transpose({linspace(C_a_start[i], C_b_start[i], nV) for i in 1:Medium.nC}) /*linspaceRepeat_1D(
         C_a_start,
-        C_b_start,nV));
+        C_b_start,nV)*/);
   /* Initialization Tab*/
   parameter SI.AbsolutePressure p_a_start = Medium.p_default "Pressure at port a"
     annotation (Dialog(tab="Initialization", group="Start Value: Absolute Pressure"));
@@ -229,7 +230,7 @@ model GenericPipe_MultiTransferSurface
     "Formulation of momentum balances"
     annotation (Evaluate=true, Dialog(tab="Advanced", group="Dynamics"));
   // Advanced
-  input SI.Acceleration g_n=Modelica.Constants.g_n "Gravitational acceleration"
+  constant SI.Acceleration g_n=Modelica.Constants.g_n "Gravitational acceleration"
     annotation (Dialog(tab="Advanced", group="Inputs"));
   parameter Boolean useInnerPortProperties=false
     "=true to take port properties for flow models from internal control volumes"
@@ -348,13 +349,161 @@ protected
   SI.Temperature[nFM + 1] Ts_wallFM(start=Ts_wallFM_start)
     "Mean wall temperatures of heat transfer surface";
   SI.Velocity[nFM + 1] vsFM "Mean velocities in flow segments";
-  SI.Length dlengthsFM[nFM] "Lengths of flow segments";
-  SI.Length[nFM] dheightsFM "Differences in heights between flow segments";
-  SI.Length[nFM + 1] dimensionsFM "Hydraulic diameters of flow segments";
-  SI.Area[nFM + 1] crossAreasFM "Cross flow areas of flow segments";
-  SI.Length[nFM + 1] perimetersFM "Wetted perimeters of flow segments";
-  SI.Height[nFM + 1] roughnessesFM "Average heights of surface asperities";
+  parameter SI.Length dlengthsFM[nFM](each fixed=false) "Lengths of flow segments";
+  parameter SI.Length[nFM] dheightsFM(each fixed=false) "Differences in heights between flow segments";
+  parameter SI.Length[nFM + 1] dimensionsFM(each fixed=false) "Hydraulic diameters of flow segments";
+  parameter SI.Area[nFM + 1] crossAreasFM(each fixed=false) "Cross flow areas of flow segments";
+  parameter SI.Length[nFM + 1] perimetersFM(each fixed=false) "Wetted perimeters of flow segments";
+  parameter SI.Height[nFM + 1] roughnessesFM(each fixed=false) "Average heights of surface asperities";
   SIadd.ExtraPropertyFlowRate mC_flows_traceMassTransferSum[nV,Medium.nC] = {{sum(traceMassTransfer.mC_flows[i,:,k]) for k in 1:Medium.nC} for i in 1:nV};
+initial algorithm
+  if useLumpedPressure then
+    // Geometry
+    if not (not exposeState_a and not exposeState_b) then
+      dlengthsFM[1] := sum(geometry.dlengths);
+      dheightsFM[1] := sum(geometry.dheights);
+      if nV == 1 then
+        dimensionsFM[1:2] := {geometry.dimensions[1], geometry.dimensions[1]};
+        crossAreasFM[1:2] := {geometry.crossAreas[1],geometry.crossAreas[1]};
+        perimetersFM[1:2] := {geometry.perimeters[1], geometry.perimeters[1]};
+        roughnessesFM[1:2] := {geometry.roughnesses[1],geometry.roughnesses[1]};
+      else
+        // nV > 1
+        dimensionsFM[1:2] := {sum(geometry.dimensions[1:iLumped - 1])/(iLumped - 1),sum(
+          geometry.dimensions[iLumped:nV])/(nV - iLumped + 1)};
+        crossAreasFM[1:2] := {sum(geometry.crossAreas[1:iLumped - 1])/(iLumped - 1),sum(
+          geometry.crossAreas[iLumped:nV])/(nV - iLumped + 1)};
+        perimetersFM[1:2] := {sum(geometry.perimeters[1:iLumped - 1])/(iLumped - 1),sum(
+          geometry.perimeters[iLumped:nV])/(nV - iLumped + 1)};
+        roughnessesFM[1:2] := {sum(geometry.roughnesses[1:iLumped - 1])/(iLumped - 1),sum(
+          geometry.roughnesses[iLumped:nV])/(nV - iLumped + 1)};
+      end if;
+    else
+      if nV == 1 then
+        dlengthsFM[1:2] := {geometry.dlengths[1]/2,geometry.dlengths[1]/2};
+        dheightsFM[1:2] := {geometry.dheights[1]/2,geometry.dheights[1]/2};
+        dimensionsFM[1:3] := {geometry.dimensions[1], geometry.dimensions[1], geometry.dimensions[1]};
+        crossAreasFM[1:3] := {geometry.crossAreas[1],geometry.crossAreas[1],geometry.crossAreas[
+          1]};
+        perimetersFM[1:3] := {geometry.perimeters[1], geometry.perimeters[1], geometry.perimeters[1]};
+        roughnessesFM[1:3] := {geometry.roughnesses[1],geometry.roughnesses[1],geometry.roughnesses[
+          1]};
+      else
+        // nV > 1
+        dlengthsFM[1:2] := {sum(geometry.dlengths[1:iLumped - 1]),sum(geometry.dlengths[
+          iLumped:nV])};
+        dheightsFM[1:2] := {sum(geometry.dheights[1:iLumped - 1]),sum(geometry.dheights[
+          iLumped:nV])};
+        dimensionsFM[1:3] := {sum(geometry.dimensions[1:iLumped - 1])/(iLumped - 1),sum(
+          geometry.dimensions)/nV,sum(geometry.dimensions[iLumped:nV])/(nV - iLumped + 1)};
+        crossAreasFM[1:3] := {sum(geometry.crossAreas[1:iLumped - 1])/(iLumped - 1),sum(
+          geometry.crossAreas)/nV,sum(geometry.crossAreas[iLumped:nV])/(nV - iLumped + 1)};
+        perimetersFM[1:3] := {sum(geometry.perimeters[1:iLumped - 1])/(iLumped - 1),sum(
+          geometry.perimeters)/nV,sum(geometry.perimeters[iLumped:nV])/(nV - iLumped + 1)};
+        roughnessesFM[1:3] := {sum(geometry.roughnesses[1:iLumped - 1])/(iLumped - 1),sum(
+          geometry.roughnesses)/nV,sum(geometry.roughnesses[iLumped:nV])/(nV - iLumped + 1)};
+      end if;
+    end if;
+  else
+    if exposeState_a and exposeState_b then
+      /* Geometry Variables */
+      for i in 1:nFM + 1 loop
+        crossAreasFM[i] := geometry.crossAreas[i];
+        dimensionsFM[i] := geometry.dimensions[i];
+        perimetersFM[i] := geometry.perimeters[i];
+        roughnessesFM[i] := geometry.roughnesses[i];
+      end for;
+      if nFM == 1 then
+        dlengthsFM[1] := geometry.dlengths[1] + geometry.dlengths[2];
+        dheightsFM[1] := geometry.dheights[1] + geometry.dheights[2];
+      else
+        dlengthsFM[1] := geometry.dlengths[1] + 0.5*geometry.dlengths[2];
+        dheightsFM[1] := geometry.dheights[1] + 0.5*geometry.dheights[2];
+        for i in 2:nFM - 1 loop
+          dlengthsFM[i] := 0.5*(geometry.dlengths[i] + geometry.dlengths[i + 1]);
+          dheightsFM[i] := 0.5*(geometry.dheights[i] + geometry.dheights[i + 1]);
+        end for;
+        dlengthsFM[nFM] := 0.5*geometry.dlengths[nFM] + geometry.dlengths[nFM + 1];
+        dheightsFM[nFM] := 0.5*geometry.dheights[nFM] + geometry.dheights[nFM + 1];
+      end if;
+    elseif exposeState_a and not exposeState_b then
+      /* Geometry Variables */
+      for i in 1:nFM loop
+        crossAreasFM[i] := geometry.crossAreas[i];
+        dimensionsFM[i] := geometry.dimensions[i];
+        perimetersFM[i] := geometry.perimeters[i];
+        roughnessesFM[i] := geometry.roughnesses[i];
+      end for;
+      crossAreasFM[nFM + 1] := geometry.crossAreas[nV];
+      dimensionsFM[nFM + 1] := geometry.dimensions[nV];
+      perimetersFM[nFM + 1] := geometry.perimeters[nV];
+      roughnessesFM[nFM + 1] := geometry.roughnesses[nV];
+      if nFM == 1 then
+        dlengthsFM[1] := geometry.dlengths[1];
+        dheightsFM[1] := geometry.dheights[1];
+      else
+        dlengthsFM[1] := geometry.dlengths[1] + 0.5*geometry.dlengths[2];
+        dheightsFM[1] := geometry.dheights[1] + 0.5*geometry.dheights[2];
+        for i in 2:nFM - 1 loop
+          dlengthsFM[i] := 0.5*(geometry.dlengths[i] + geometry.dlengths[i + 1]);
+          dheightsFM[i] := 0.5*(geometry.dheights[i] + geometry.dheights[i + 1]);
+        end for;
+        dlengthsFM[nFM] := 0.5*geometry.dlengths[nFM];
+        dheightsFM[nFM] := 0.5*geometry.dheights[nFM];
+      end if;
+    elseif not exposeState_a and exposeState_b then
+      /* Geometry Variables */
+      crossAreasFM[1] := geometry.crossAreas[1];
+      dimensionsFM[1] := geometry.dimensions[1];
+      perimetersFM[1] := geometry.perimeters[1];
+      roughnessesFM[1] := geometry.roughnesses[1];
+      for i in 2:nFM + 1 loop
+        crossAreasFM[i] := geometry.crossAreas[i - 1];
+        dimensionsFM[i] := geometry.dimensions[i - 1];
+        perimetersFM[i] := geometry.perimeters[i - 1];
+        roughnessesFM[i] := geometry.roughnesses[i - 1];
+      end for;
+      if nFM == 1 then
+        dlengthsFM[1] := geometry.dlengths[1];
+        dheightsFM[1] := geometry.dheights[1];
+      else
+        dlengthsFM[1] := 0.5*geometry.dlengths[1];
+        dheightsFM[1] := 0.5*geometry.dheights[1];
+        for i in 2:nFM - 1 loop
+          dlengthsFM[i] := 0.5*(geometry.dlengths[i - 1] + geometry.dlengths[i]);
+          dheightsFM[i] := 0.5*(geometry.dheights[i - 1] + geometry.dheights[i]);
+        end for;
+        dlengthsFM[nFM] := 0.5*geometry.dlengths[nFM - 1] + geometry.dlengths[nFM];
+        dheightsFM[nFM] := 0.5*geometry.dheights[nFM - 1] + geometry.dheights[nFM];
+      end if;
+    elseif not exposeState_a and not exposeState_b then
+      /* Geometry Variables */
+      crossAreasFM[1] := geometry.crossAreas[1];
+      dimensionsFM[1] := geometry.dimensions[1];
+      perimetersFM[1] := geometry.perimeters[1];
+      roughnessesFM[1] := geometry.roughnesses[1];
+      for i in 2:nFM loop
+        crossAreasFM[i] := geometry.crossAreas[i - 1];
+        dimensionsFM[i] := geometry.dimensions[i - 1];
+        perimetersFM[i] := geometry.perimeters[i - 1];
+        roughnessesFM[i] := geometry.roughnesses[i - 1];
+      end for;
+      crossAreasFM[nFM + 1] := geometry.crossAreas[nV];
+      dimensionsFM[nFM + 1] := geometry.dimensions[nV];
+      perimetersFM[nFM + 1] := geometry.perimeters[nV];
+      roughnessesFM[nFM + 1] := geometry.roughnesses[nV];
+      dlengthsFM[1] := 0.5*geometry.dlengths[1];
+      dheightsFM[1] := 0.5*geometry.dheights[1];
+      for i in 2:nFM - 1 loop
+        dlengthsFM[i] := 0.5*(geometry.dlengths[i - 1] + geometry.dlengths[i]);
+        dheightsFM[i] := 0.5*(geometry.dheights[i - 1] + geometry.dheights[i]);
+      end for;
+      dlengthsFM[nFM] := 0.5*geometry.dlengths[nFM - 1];
+      dheightsFM[nFM] := 0.5*geometry.dheights[nFM - 1];
+    else
+      assert(false, "Unknown model structure");
+    end if;
+  end if;
 equation
   // Source/sink terms for balance equations
   for i in 1:nV loop
@@ -549,52 +698,6 @@ equation
     else
       assert(false, "Unknown model structure");
     end if;
-    // Geometry
-    if not (not exposeState_a and not exposeState_b) then
-      dlengthsFM[1] = sum(geometry.dlengths);
-      dheightsFM[1] = sum(geometry.dheights);
-      if nV == 1 then
-        dimensionsFM[1:2] = {geometry.dimensions[1], geometry.dimensions[1]};
-        crossAreasFM[1:2] = {geometry.crossAreas[1],geometry.crossAreas[1]};
-        perimetersFM[1:2] = {geometry.perimeters[1], geometry.perimeters[1]};
-        roughnessesFM[1:2] = {geometry.roughnesses[1],geometry.roughnesses[1]};
-      else
-        // nV > 1
-        dimensionsFM[1:2] ={sum(geometry.dimensions[1:iLumped - 1])/(iLumped - 1),sum(
-          geometry.dimensions[iLumped:nV])/(nV - iLumped + 1)};
-        crossAreasFM[1:2] ={sum(geometry.crossAreas[1:iLumped - 1])/(iLumped - 1),sum(
-          geometry.crossAreas[iLumped:nV])/(nV - iLumped + 1)};
-        perimetersFM[1:2] ={sum(geometry.perimeters[1:iLumped - 1])/(iLumped - 1),sum(
-          geometry.perimeters[iLumped:nV])/(nV - iLumped + 1)};
-        roughnessesFM[1:2] ={sum(geometry.roughnesses[1:iLumped - 1])/(iLumped - 1),sum(
-          geometry.roughnesses[iLumped:nV])/(nV - iLumped + 1)};
-      end if;
-    else
-      if nV == 1 then
-        dlengthsFM[1:2] = {geometry.dlengths[1]/2,geometry.dlengths[1]/2};
-        dheightsFM[1:2] = {geometry.dheights[1]/2,geometry.dheights[1]/2};
-        dimensionsFM[1:3] = {geometry.dimensions[1], geometry.dimensions[1], geometry.dimensions[1]};
-        crossAreasFM[1:3] = {geometry.crossAreas[1],geometry.crossAreas[1],geometry.crossAreas[
-          1]};
-        perimetersFM[1:3] = {geometry.perimeters[1], geometry.perimeters[1], geometry.perimeters[1]};
-        roughnessesFM[1:3] = {geometry.roughnesses[1],geometry.roughnesses[1],geometry.roughnesses[
-          1]};
-      else
-        // nV > 1
-        dlengthsFM[1:2] = {sum(geometry.dlengths[1:iLumped - 1]),sum(geometry.dlengths[
-          iLumped:nV])};
-        dheightsFM[1:2] = {sum(geometry.dheights[1:iLumped - 1]),sum(geometry.dheights[
-          iLumped:nV])};
-        dimensionsFM[1:3] ={sum(geometry.dimensions[1:iLumped - 1])/(iLumped - 1),sum(
-          geometry.dimensions)/nV,sum(geometry.dimensions[iLumped:nV])/(nV - iLumped + 1)};
-        crossAreasFM[1:3] ={sum(geometry.crossAreas[1:iLumped - 1])/(iLumped - 1),sum(
-          geometry.crossAreas)/nV,sum(geometry.crossAreas[iLumped:nV])/(nV - iLumped + 1)};
-        perimetersFM[1:3] ={sum(geometry.perimeters[1:iLumped - 1])/(iLumped - 1),sum(
-          geometry.perimeters)/nV,sum(geometry.perimeters[iLumped:nV])/(nV - iLumped + 1)};
-        roughnessesFM[1:3] ={sum(geometry.roughnesses[1:iLumped - 1])/(iLumped - 1),sum(
-          geometry.roughnesses)/nV,sum(geometry.roughnesses[iLumped:nV])/(nV - iLumped + 1)};
-      end if;
-    end if;
   else
     if exposeState_a and exposeState_b then
       /************************************************************************/
@@ -614,26 +717,6 @@ equation
         vsFM[i] = vs[i];
         Ts_wallFM[i] = sum(Ts_wall[i,:])/geometry.nSurfaces;
       end for;
-      /* Geometry Variables */
-      for i in 1:nFM + 1 loop
-        crossAreasFM[i] = geometry.crossAreas[i];
-        dimensionsFM[i] = geometry.dimensions[i];
-        perimetersFM[i] = geometry.perimeters[i];
-        roughnessesFM[i] = geometry.roughnesses[i];
-      end for;
-      if nFM == 1 then
-        dlengthsFM[1] = geometry.dlengths[1] + geometry.dlengths[2];
-        dheightsFM[1] = geometry.dheights[1] + geometry.dheights[2];
-      else
-        dlengthsFM[1] = geometry.dlengths[1] + 0.5*geometry.dlengths[2];
-        dheightsFM[1] = geometry.dheights[1] + 0.5*geometry.dheights[2];
-        for i in 2:nFM - 1 loop
-          dlengthsFM[i] = 0.5*(geometry.dlengths[i] + geometry.dlengths[i + 1]);
-          dheightsFM[i] = 0.5*(geometry.dheights[i] + geometry.dheights[i + 1]);
-        end for;
-        dlengthsFM[nFM] = 0.5*geometry.dlengths[nFM] + geometry.dlengths[nFM + 1];
-        dheightsFM[nFM] = 0.5*geometry.dheights[nFM] + geometry.dheights[nFM + 1];
-      end if;
     elseif exposeState_a and not exposeState_b then
       /************************************************************************/
       /*             1.b Model Structure (true, false) (i.e., v_)             */
@@ -654,30 +737,6 @@ equation
       statesFM[nFM + 1] = state_b;
       vsFM[nFM + 1] = m_flows[nFM + 1]/Medium.density(state_b)/geometry.crossAreas[nV];
       Ts_wallFM[nFM + 1] =sum(Ts_wall[nV,:])/geometry.nSurfaces;
-      /* Geometry Variables */
-      for i in 1:nFM loop
-        crossAreasFM[i] = geometry.crossAreas[i];
-        dimensionsFM[i] = geometry.dimensions[i];
-        perimetersFM[i] = geometry.perimeters[i];
-        roughnessesFM[i] = geometry.roughnesses[i];
-      end for;
-      crossAreasFM[nFM + 1] = geometry.crossAreas[nV];
-      dimensionsFM[nFM + 1] = geometry.dimensions[nV];
-      perimetersFM[nFM + 1] = geometry.perimeters[nV];
-      roughnessesFM[nFM + 1] = geometry.roughnesses[nV];
-      if nFM == 1 then
-        dlengthsFM[1] = geometry.dlengths[1];
-        dheightsFM[1] = geometry.dheights[1];
-      else
-        dlengthsFM[1] = geometry.dlengths[1] + 0.5*geometry.dlengths[2];
-        dheightsFM[1] = geometry.dheights[1] + 0.5*geometry.dheights[2];
-        for i in 2:nFM - 1 loop
-          dlengthsFM[i] = 0.5*(geometry.dlengths[i] + geometry.dlengths[i + 1]);
-          dheightsFM[i] = 0.5*(geometry.dheights[i] + geometry.dheights[i + 1]);
-        end for;
-        dlengthsFM[nFM] = 0.5*geometry.dlengths[nFM];
-        dheightsFM[nFM] = 0.5*geometry.dheights[nFM];
-      end if;
     elseif not exposeState_a and exposeState_b then
       /************************************************************************/
       /*             1.c Model Structure (false, true) (i.e., _v)             */
@@ -698,30 +757,6 @@ equation
         vsFM[i] = vs[i - 1];
         Ts_wallFM[i] = sum(Ts_wall[i - 1,:])/geometry.nSurfaces;
       end for;
-      /* Geometry Variables */
-      crossAreasFM[1] = geometry.crossAreas[1];
-      dimensionsFM[1] = geometry.dimensions[1];
-      perimetersFM[1] = geometry.perimeters[1];
-      roughnessesFM[1] = geometry.roughnesses[1];
-      for i in 2:nFM + 1 loop
-        crossAreasFM[i] = geometry.crossAreas[i - 1];
-        dimensionsFM[i] = geometry.dimensions[i - 1];
-        perimetersFM[i] = geometry.perimeters[i - 1];
-        roughnessesFM[i] = geometry.roughnesses[i - 1];
-      end for;
-      if nFM == 1 then
-        dlengthsFM[1] = geometry.dlengths[1];
-        dheightsFM[1] = geometry.dheights[1];
-      else
-        dlengthsFM[1] = 0.5*geometry.dlengths[1];
-        dheightsFM[1] = 0.5*geometry.dheights[1];
-        for i in 2:nFM - 1 loop
-          dlengthsFM[i] = 0.5*(geometry.dlengths[i - 1] + geometry.dlengths[i]);
-          dheightsFM[i] = 0.5*(geometry.dheights[i - 1] + geometry.dheights[i]);
-        end for;
-        dlengthsFM[nFM] = 0.5*geometry.dlengths[nFM - 1] + geometry.dlengths[nFM];
-        dheightsFM[nFM] = 0.5*geometry.dheights[nFM - 1] + geometry.dheights[nFM];
-      end if;
     elseif not exposeState_a and not exposeState_b then
       /************************************************************************/
       /*            1.d Model Structure (false, false) (i.e., _v_)            */
@@ -744,29 +779,6 @@ equation
       statesFM[nFM + 1] = state_b;
       vsFM[nFM + 1] = m_flows[nFM]/Medium.density(state_b)/geometry.crossAreas[nV];
       Ts_wallFM[nFM + 1] =sum(Ts_wall[nV,:])/geometry.nSurfaces;
-      /* Geometry Variables */
-      crossAreasFM[1] = geometry.crossAreas[1];
-      dimensionsFM[1] = geometry.dimensions[1];
-      perimetersFM[1] = geometry.perimeters[1];
-      roughnessesFM[1] = geometry.roughnesses[1];
-      for i in 2:nFM loop
-        crossAreasFM[i] = geometry.crossAreas[i - 1];
-        dimensionsFM[i] = geometry.dimensions[i - 1];
-        perimetersFM[i] = geometry.perimeters[i - 1];
-        roughnessesFM[i] = geometry.roughnesses[i - 1];
-      end for;
-      crossAreasFM[nFM + 1] = geometry.crossAreas[nV];
-      dimensionsFM[nFM + 1] = geometry.dimensions[nV];
-      perimetersFM[nFM + 1] = geometry.perimeters[nV];
-      roughnessesFM[nFM + 1] = geometry.roughnesses[nV];
-      dlengthsFM[1] = 0.5*geometry.dlengths[1];
-      dheightsFM[1] = 0.5*geometry.dheights[1];
-      for i in 2:nFM - 1 loop
-        dlengthsFM[i] = 0.5*(geometry.dlengths[i - 1] + geometry.dlengths[i]);
-        dheightsFM[i] = 0.5*(geometry.dheights[i - 1] + geometry.dheights[i]);
-      end for;
-      dlengthsFM[nFM] = 0.5*geometry.dlengths[nFM - 1];
-      dheightsFM[nFM] = 0.5*geometry.dheights[nFM - 1];
     else
       assert(false, "Unknown model structure");
     end if;

@@ -15,7 +15,7 @@ algorithm
       n1,
       n2);
   end for;
-  annotation (Documentation(info="<html>
+  annotation (Inline = true, Documentation(info="<html>
 <p>For example:</p>
 <p>For n1=3, n2=2, and val={-1,2,3,10}.</p>
 <p>The returned matrix is y[3,2,4] where y[1,:,:] is:</p>

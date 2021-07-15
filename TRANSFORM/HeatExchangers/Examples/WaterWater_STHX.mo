@@ -63,7 +63,7 @@ model WaterWater_STHX
         Fluid.ClosureRelations.HeatTransfer.Models.DistributedPipe_1D_MultiTransferSurface.Alphas
         (alpha0=1000))
     annotation (Placement(transformation(extent={{-21,-20},{21,20}})));
-  UserInteraction.Outputs.SpatialPlot2 spatialPlot2_1(
+  /*UserInteraction.Outputs.SpatialPlot2 spatialPlot2_1(
     y1={STHX.tube.mediums[i].T for i in 1:STHX.geometry.nV},
     y2={STHX.shell.mediums[i].T for i in 1:STHX.geometry.nV},
     x1=STHX.tube.summary.xpos_norm,
@@ -73,7 +73,7 @@ model WaterWater_STHX
     maxY2=max({tube_inlet.T,shell_inlet.T,tube_outlet.T,shell_outlet.T}),
     x2=if STHX.counterCurrent == true then Modelica.Math.Vectors.reverse(STHX.shell.summary.xpos_norm)
          else STHX.shell.summary.xpos_norm)
-    annotation (Placement(transformation(extent={{-96,-92},{-46,-48}})));
+    annotation (Placement(transformation(extent={{-96,-92},{-46,-48}})));*/
   TRANSFORM.Utilities.ErrorAnalysis.UnitTests
                                     unitTests(n=4, x={STHX.tube.mediums[2].p,
         STHX.shell.mediums[2].p,STHX.tube.mediums[2].h,STHX.shell.mediums[2].h})

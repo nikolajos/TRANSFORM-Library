@@ -21,11 +21,11 @@ partial model PartialDistributedVolume
   parameter SI.Density ds_reference[nVs[1],nVs[2]]=Material.density(Material.setState_T(Ts_start))
     "Reference density of mass reference for constant volumes"
     annotation (Dialog(tab="Advanced"));
-  Material.BaseProperties materials[nVs[1],nVs[2]](T(each stateSelect=
-          StateSelect.prefer, start=Ts_start));
+  Material.BaseProperties materials[nVs[1],nVs[2]](T(stateSelect=
+          fill(StateSelect.prefer, nVs[1], nVs[2]), start=Ts_start));
   // Total quantities
   SI.Mass ms[nVs[1],nVs[2]] "Mass";
-  SI.Mass delta_ms[nVs[1],nVs[2]] "Change in mass of constant volumes";
+  SI.Mass delta_ms[nVs[1],nVs[2]](each min=-Modelica.Constants.inf) "Change in mass of constant volumes";
   SI.InternalEnergy Us[nVs[1],nVs[2]] "Internal energy";
   // Energy Balance
   SI.HeatFlowRate Ubs[nVs[1],nVs[2]]

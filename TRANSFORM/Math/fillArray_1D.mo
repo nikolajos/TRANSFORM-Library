@@ -11,7 +11,7 @@ algorithm
   for i in 1:m loop
     y[:, i] := fill(val[i], n);
   end for;
-  annotation (Documentation(info="<html>
+  annotation (Inline = true, Documentation(info="<html>
 <p>For example:</p>
 <p>For n=3, and val={-1,2,3,10}.</p>
 <p>The returned matrix is y[3,4]</p>

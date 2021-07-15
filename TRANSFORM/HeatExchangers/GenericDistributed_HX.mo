@@ -63,7 +63,7 @@ model GenericDistributed_HX
     "Tube side coefficient of heat transfer" annotation (choicesAllMatching=true,
       Dialog(group="Heat Transfer"));
   // Shell Initialization
-  parameter SI.AbsolutePressure[geometry.nV] ps_start_shell=linspace_1D(
+  parameter SI.AbsolutePressure[geometry.nV] ps_start_shell=linspace(
       p_a_start_shell,
       p_b_start_shell,
       geometry.nV) "Pressure" annotation (Dialog(tab="Shell Initialization",
@@ -75,7 +75,7 @@ model GenericDistributed_HX
   parameter Boolean use_Ts_start_shell=true
     "Use T_start if true, otherwise h_start" annotation (Evaluate=true, Dialog(
         tab="Shell Initialization", group="Start Value: Temperature"));
-  parameter SI.Temperature Ts_start_shell[geometry.nV]=linspace_1D(
+  parameter SI.Temperature Ts_start_shell[geometry.nV]=linspace(
       T_a_start_shell,
       T_b_start_shell,
       geometry.nV) "Temperature" annotation (Evaluate=true, Dialog(
@@ -93,7 +93,7 @@ model GenericDistributed_HX
       group="Start Value: Temperature",
       enable=use_Ts_start_shell));
   parameter SI.SpecificEnthalpy[geometry.nV] hs_start_shell=if not
-      use_Ts_start_shell then linspace_1D(
+      use_Ts_start_shell then linspace(
       h_a_start_shell,
       h_b_start_shell,
       geometry.nV) else {Medium_shell.specificEnthalpy_pTX(
@@ -121,10 +121,11 @@ model GenericDistributed_HX
       group="Start Value: Specific Enthalpy",
       enable=not use_Ts_start_shell));
   parameter SI.MassFraction Xs_start_shell[geometry.nV,Medium_shell.nX]=
-      linspaceRepeat_1D(
-      X_a_start_shell,
-      X_b_start_shell,
-      geometry.nV) "Mass fraction" annotation (Dialog(
+      transpose({linspace(
+      X_a_start_shell[i],
+      X_b_start_shell[i],
+      geometry.nV) 
+      for i in 1:Medium_shell.nX}) "Mass fraction" annotation (Dialog(
       tab="Shell Initialization",
       group="Start Value: Species Mass Fraction",
       enable=Medium_shell.nXi > 0));
@@ -135,10 +136,11 @@ model GenericDistributed_HX
     "Mass fraction at port b" annotation (Dialog(tab="Shell Initialization",
         group="Start Value: Species Mass Fraction"));
   parameter SIadd.ExtraProperty Cs_start_shell[geometry.nV,Medium_shell.nC]=
-      linspaceRepeat_1D(
-      C_a_start_shell,
-      C_b_start_shell,
-      geometry.nV) "Mass-Specific value" annotation (Dialog(
+      transpose({linspace(
+      C_a_start_shell[i],
+      C_b_start_shell[i],
+      geometry.nV) 
+      for i in 1:Medium_shell.nC}) "Mass-Specific value" annotation (Dialog(
       tab="Shell Initialization",
       group="Start Value: Trace Substances",
       enable=Medium_shell.nC > 0));
@@ -159,7 +161,7 @@ model GenericDistributed_HX
     "Mass flow rate at port_b" annotation (Dialog(tab="Shell Initialization",
         group="Start Value: Mass Flow Rate"));
   // Tube Initialization
-  parameter SI.AbsolutePressure[geometry.nV] ps_start_tube=linspace_1D(
+  parameter SI.AbsolutePressure[geometry.nV] ps_start_tube=linspace(
       p_a_start_tube,
       p_b_start_tube,
       geometry.nV) "Pressure" annotation (Dialog(tab="Tube Initialization",
@@ -171,7 +173,7 @@ model GenericDistributed_HX
   parameter Boolean use_Ts_start_tube=true
     "Use T_start if true, otherwise h_start" annotation (Evaluate=true, Dialog(
         tab="Tube Initialization", group="Start Value: Temperature"));
-  parameter SI.Temperature Ts_start_tube[geometry.nV]=linspace_1D(
+  parameter SI.Temperature Ts_start_tube[geometry.nV]=linspace(
       T_a_start_tube,
       T_b_start_tube,
       geometry.nV) "Temperature" annotation (Evaluate=true, Dialog(
@@ -189,7 +191,7 @@ model GenericDistributed_HX
       group="Start Value: Temperature",
       enable=use_Ts_start_tube));
   parameter SI.SpecificEnthalpy[geometry.nV] hs_start_tube=if not
-      use_Ts_start_tube then linspace_1D(
+      use_Ts_start_tube then linspace(
       h_a_start_tube,
       h_b_start_tube,
       geometry.nV) else {Medium_tube.specificEnthalpy_pTX(
@@ -215,10 +217,11 @@ model GenericDistributed_HX
       group="Start Value: Specific Enthalpy",
       enable=not use_Ts_start_tube));
   parameter SI.MassFraction Xs_start_tube[geometry.nV,Medium_tube.nX]=
-      linspaceRepeat_1D(
-      X_a_start_tube,
-      X_b_start_tube,
-      geometry.nV) "Mass fraction" annotation (Dialog(
+      transpose({linspace(
+      X_a_start_tube[i],
+      X_b_start_tube[i],
+      geometry.nV) 
+      for i in 1:Medium_tube.nX}) "Mass fraction" annotation (Dialog(
       tab="Tube Initialization",
       group="Start Value: Species Mass Fraction",
       enable=Medium_tube.nXi > 0));
@@ -229,10 +232,11 @@ model GenericDistributed_HX
     "Mass fraction at port b" annotation (Dialog(tab="Tube Initialization",
         group="Start Value: Species Mass Fraction"));
   parameter SIadd.ExtraProperty Cs_start_tube[geometry.nV,Medium_tube.nC]=
-      linspaceRepeat_1D(
-      C_a_start_tube,
-      C_b_start_tube,
-      geometry.nV) "Mass-Specific value" annotation (Dialog(
+      transpose({linspace(
+      C_a_start_tube[i],
+      C_b_start_tube[i],
+      geometry.nV) 
+      for i in 1:Medium_tube.nC}) "Mass-Specific value" annotation (Dialog(
       tab="Tube Initialization",
       group="Start Value: Trace Substances",
       enable=Medium_tube.nC > 0));
@@ -254,11 +258,11 @@ model GenericDistributed_HX
         group="Start Value: Mass Flow Rate"));
   // Tube Wall Initialization
   parameter SI.Temperature Ts_wall_start[geometry.nR,geometry.nV]=
-     linspaceRepeat_1D(
-      Ts_wall_start_tubeSide,
-      if counterCurrent then Modelica.Math.Vectors.reverse(
-        Ts_wall_start_shellSide) else Ts_wall_start_shellSide,
-      geometry.nR) "Tube wall temperature" annotation (Dialog(tab="Wall Initialization",
+     transpose({linspace(
+      Ts_wall_start_tubeSide[i],
+      if counterCurrent then Ts_wall_start_shellSide[end-(i-1)] else Ts_wall_start_shellSide[i],
+      geometry.nR)
+      for i in 1:geometry.nV}) "Tube wall temperature" annotation (Dialog(tab="Wall Initialization",
         group="Start Value: Temperature"));
   parameter SI.Temperature Ts_wall_start_tubeSide[geometry.nV]=
       Medium_tube.temperature_phX(
@@ -351,7 +355,7 @@ model GenericDistributed_HX
     hs_start=hs_start_shell,
     Ts_start=Ts_start_shell,
     nParallel=nParallel,
-    Ts_wall(start=transpose(TRANSFORM.Math.fillArray_1D(Ts_wall_start_shellSide,geometry.nSurfaces_shell))),
+    Ts_wall(start=transpose(fill(Ts_wall_start_shellSide,geometry.nSurfaces_shell))),
     redeclare model FlowModel = FlowModel_shell,
     energyDynamics=energyDynamics[1],
     massDynamics=massDynamics[1],
@@ -406,7 +410,7 @@ model GenericDistributed_HX
     ps_start=ps_start_tube,
     hs_start=hs_start_tube,
     Ts_start=Ts_start_tube,
-    Ts_wall(start=transpose(TRANSFORM.Math.fillArray_1D(Ts_wall_start_tubeSide,geometry.nSurfaces_tube))),
+    Ts_wall(start=transpose(fill(Ts_wall_start_tubeSide,geometry.nSurfaces_tube))),
     redeclare model FlowModel = FlowModel_tube,
     nParallel=geometry.nTubes*nParallel,
     energyDynamics=energyDynamics[2],
@@ -505,8 +509,8 @@ model GenericDistributed_HX
   replaceable model InternalHeatGen_shell =
       Fluid.ClosureRelations.InternalVolumeHeatGeneration.Models.DistributedVolume_1D.GenericHeatGeneration
       annotation (Dialog(group="Heat Transfer"),choicesAllMatching=true);
-  extends TRANSFORM.Utilities.Visualizers.IconColorMap(showColors=systemTF.showColors, val_min=systemTF.val_min,val_max=systemTF.val_max, val=shell.summary.T_effective);
-  Real dynColor_tube[3] = Modelica.Mechanics.MultiBody.Visualizers.Colors.scalarToColor(tube.summary.T_effective, val_min, val_max, colorMap(n_colors));
+  //extends TRANSFORM.Utilities.Visualizers.IconColorMap(showColors=systemTF.showColors, val_min=systemTF.val_min,val_max=systemTF.val_max, val=shell.summary.T_effective);
+  //Real dynColor_tube[3] = Modelica.Mechanics.MultiBody.Visualizers.Colors.scalarToColor(tube.summary.T_effective, val_min, val_max, colorMap(n_colors));
 equation
   //    SI.TemperatureDifference DT_lm "Log mean temperature difference";
   //    SI.ThermalConductance UA "Overall heat transfer conductance";

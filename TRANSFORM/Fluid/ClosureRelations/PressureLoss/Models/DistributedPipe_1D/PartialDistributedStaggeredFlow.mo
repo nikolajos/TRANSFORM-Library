@@ -25,18 +25,18 @@ partial model PartialDistributedStaggeredFlow
     "Mean wall temperatures of heat transfer surface"
     annotation (Dialog(group="Inputs", tab="Internal Interface"));
   // Geometry
-  input SI.Length dimensions[nFM + 1]
+  parameter SI.Length dimensions[nFM + 1]
     "Characteristic dimensions (e.g. hydraulic diameter)"
     annotation (Dialog(group="Inputs", tab="Internal Interface"));
-  input SI.Area crossAreas[nFM + 1] "Cross sectional area"
+  parameter SI.Area crossAreas[nFM + 1] "Cross sectional area"
     annotation (Dialog(group="Inputs", tab="Internal Interface"));
-  input SI.Length perimeters[nFM + 1] "Wetted perimeter"
+  parameter SI.Length perimeters[nFM + 1] "Wetted perimeter"
     annotation (Dialog(group="Inputs", tab="Internal Interface"));
-  input SI.Length dlengths[nFM] "Length of flow model"
+  parameter SI.Length dlengths[nFM] "Length of flow model"
     annotation (Dialog(group="Inputs", tab="Internal Interface"));
-  input SI.Height[nFM + 1] roughnesses "Average height of surface asperities"
+  parameter SI.Height[nFM + 1] roughnesses "Average height of surface asperities"
     annotation (Dialog(group="Inputs", tab="Internal Interface"));
-  input SI.Length[nFM] dheights
+  parameter SI.Length[nFM] dheights
     "Height(states[2:nFM+1]) - Height(states[1:nFM])"
     annotation (Dialog(group="Inputs", tab="Internal Interface"));
   parameter Boolean allowFlowReversal = true

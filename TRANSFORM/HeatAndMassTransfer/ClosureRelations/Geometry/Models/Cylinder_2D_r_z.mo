@@ -7,40 +7,37 @@ model Cylinder_2D_r_z
   parameter Integer nZ(min=1) = 1 "Number of nodes in z-direction";
 
   //todo: make r_inner rs_inner? allow cylinder of different geoemtry on inner surface. Already permitted on outer surface... Do for all cylinder and sphere geometries.. 1D and 3D as well?
-  input SI.Length r_inner=0
+  parameter SI.Length r_inner=0
     "Specify inner radius or dthetas in r-dimension and r_outer"
     annotation (Dialog(group="Inputs"));
-  input SI.Length r_outer=1 "Specify outer radius or dthetas in r-dimension"
+  parameter SI.Length r_outer=1 "Specify outer radius or dthetas in r-dimension"
     annotation (Dialog(group="Inputs"));
-  input SI.Angle angle_theta(
+  parameter SI.Angle angle_theta(
     min=0,
     max=2*Modelica.Constants.pi) = 2*Modelica.Constants.pi
     "Specify angle or dthetas in theta-dimension"
     annotation (Dialog(group="Inputs"));
-  input SI.Length length_z=1 "Specify overall length or dzs in z-dimension"
+  parameter SI.Length length_z=1 "Specify overall length or dzs in z-dimension"
     annotation (Dialog(group="Inputs"));
-  input SI.Length drs[nR,nZ](min=fill(0,nR,nZ)) = fill(
+  parameter SI.Length drs[nR,nZ](min=fill(0,nR,nZ), each stateSelect=StateSelect.default) = fill(
     (r_outer - r_inner)/nR,
     nR,
     nZ) "Unit volume lengths of r-dimension"
     annotation (Dialog(group="Inputs"));
-  input SI.Angle dthetas[nR,nZ](min=fill(0,nR,nZ)) = fill(
+  parameter SI.Angle dthetas[nR,nZ](min=fill(0,nR,nZ)) = fill(
     angle_theta,
     nR,
     nZ) "Unit volume lengths of theta-dimension"
     annotation (Dialog(group="Inputs"));
-  input SI.Length dzs[nR,nZ](min=fill(0,nR,nZ)) = fill(
+  parameter SI.Length dzs[nR,nZ](min=fill(0,nR,nZ), each stateSelect=StateSelect.default) = fill(
     (length_z)/nZ,
     nR,
     nZ) "Unit volume lengths of z-dimension"
     annotation (Dialog(group="Inputs"));
-  SI.Length rs[nR,nZ] "Position in r-dimension";
-  SI.Angle thetas[nR,nZ] "Position in theta-dimension";
-  SI.Length zs[nR,nZ] "Position in z-dimension";
-initial equation
-  closedDim_1 = fill(false,nZ);
-  closedDim_2 = fill(false,nR);
-algorithm
+  parameter SI.Length rs[nR,nZ](fixed=fill(false,nR,nZ)) "Position in r-dimension";
+  parameter SI.Angle thetas[nR,nZ](fixed=fill(false,nR,nZ)) "Position in theta-dimension";
+  parameter SI.Length zs[nR,nZ](fixed=fill(false,nR,nZ)) "Position in z-dimension";
+initial algorithm
   for k in 1:nZ loop
     rs[1, k] := r_inner + 0.5*drs[1, k];
     for i in 2:nR loop
@@ -102,6 +99,10 @@ algorithm
       end if;
     end for;
   end for;
+initial equation
+  closedDim_1 = fill(false,nZ);
+  closedDim_2 = fill(false,nR);
+
   annotation (
     defaultComponentName="geometry",
     Icon(coordinateSystem(preserveAspectRatio=false)),

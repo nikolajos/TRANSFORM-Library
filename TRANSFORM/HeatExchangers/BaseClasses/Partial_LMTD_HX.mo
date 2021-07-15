@@ -50,7 +50,7 @@ partial model Partial_LMTD_HX
     p_start=p_start_1,
     T_start=T_start_1,
     redeclare model Geometry =
-        Fluid.ClosureRelations.Geometry.Models.LumpedVolume.GenericVolume,
+        Fluid.ClosureRelations.Geometry.Models.LumpedVolume.GenericVolume(V=1),
     use_HeatPort=true)
     annotation (Placement(transformation(extent={{-40,50},{-20,30}})));
   Fluid.FittingsAndResistances.SpecifiedResistance resistance_1(redeclare
@@ -66,7 +66,7 @@ partial model Partial_LMTD_HX
     p_start=p_start_2,
     T_start=T_start_2,
     redeclare model Geometry =
-        Fluid.ClosureRelations.Geometry.Models.LumpedVolume.GenericVolume,
+        Fluid.ClosureRelations.Geometry.Models.LumpedVolume.GenericVolume(V=1),
     use_HeatPort=true)
     annotation (Placement(transformation(extent={{40,-30},{20,-50}})));
   TRANSFORM.HeatAndMassTransfer.BoundaryConditions.Heat.HeatFlow boundary_2(use_port=

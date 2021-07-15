@@ -9,8 +9,8 @@ equation
   dps_fg = dps_f + dps_g;
   for i in 1:nFM loop
     dps_f[i] =dp_nominal/m_flow_nominal/nFM*m_flows[i];
-    dps_g[i] =g_n*dheights[i]*0.5*(Medium.density(states[i]) + Medium.density(
-      states[i + 1]));
+    dps_g[i] =0;/*g_n*dheights[i]*0.5*(Medium.density(states[i]) + Medium.density(
+      states[i + 1]));*/
   end for;
   annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
         coordinateSystem(preserveAspectRatio=false)));

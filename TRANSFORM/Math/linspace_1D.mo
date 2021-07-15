@@ -15,4 +15,5 @@ algorithm
       x2,
       n);
   end if;
+  annotation(Inline = true);
 end linspace_1D;

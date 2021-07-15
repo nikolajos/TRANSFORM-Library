@@ -4,6 +4,7 @@ record Summary
   SI.Temperature T_effective "Unit cell mass averaged temperature"
     annotation (Dialog(group="Inputs"));
   SI.Temperature T_max "Maximum temperature" annotation (Dialog(group="Inputs"));
+  SI.Temperature T_min "Minimum temperature" annotation (Dialog(group="Inputs"));
   SI.ThermalConductivity lambda_effective "Unit cell mass averaged thermal conductivity" annotation (Dialog(group="Inputs"));
   annotation (
     defaultComponentName="summary",

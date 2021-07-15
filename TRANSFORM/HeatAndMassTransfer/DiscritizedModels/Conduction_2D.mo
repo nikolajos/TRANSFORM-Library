@@ -4,6 +4,7 @@ model Conduction_2D "2-D Conduction Models"
   BaseClasses.Dimensions_2.Summary summary(
     T_effective=sum(materials.T .* ms/sum(ms)),
     T_max=max(materials.T),
+    T_min=min(materials.T),
     lambda_effective=sum(Material.thermalConductivity(materials.state) .* ms/
         sum(ms)))
     annotation (Placement(transformation(extent={{80,-100},{100,-80}})));
@@ -132,10 +133,199 @@ model Conduction_2D "2-D Conduction Models"
 protected
   Material.ThermodynamicState statesFM_1[nFM_1 + 1,nVs[2]];
   Material.ThermodynamicState statesFM_2[nVs[1],nFM_2 + 1];
-  SI.Area crossAreas_1FM[nFM_1,nVs[2]];
-  SI.Area crossAreas_2FM[nVs[1],nFM_2];
-  SI.Length lengths_1FM[nFM_1,nVs[2]];
-  SI.Length lengths_2FM[nVs[1],nFM_2];
+  parameter SI.Area crossAreas_1FM[nFM_1,nVs[2]](each fixed=false);
+  parameter SI.Area crossAreas_2FM[nVs[1],nFM_2](each fixed=false);
+  parameter SI.Length lengths_1FM[nFM_1,nVs[2]](each fixed=false);
+  parameter SI.Length lengths_2FM[nVs[1],nFM_2](each fixed=false);
+initial algorithm
+  if exposeState_a1 and exposeState_b1 then
+    assert(nVs[1] > 1,
+      "nVs[1] must be > 1 if exposeState_a1 and exposeState_b1 = true");
+  end if;
+  for j in 1:nVs[2] loop
+    if exposeState_a1 and exposeState_b1 then
+      /* Geometry Variables */
+      for i in 1:nFM_1 loop
+        crossAreas_1FM[i, j] := geometry.crossAreas_1[i + 1, j];
+      end for;
+      if nFM_1 == 1 then
+        lengths_1FM[1, j] := geometry.dlengths_1[1, j] + geometry.dlengths_1[2,
+          j];
+      else
+        lengths_1FM[1, j] := geometry.dlengths_1[1, j] + 0.5*geometry.dlengths_1
+          [2, j];
+        for i in 2:nFM_1 - 1 loop
+          lengths_1FM[i, j] := 0.5*(geometry.dlengths_1[i, j] + geometry.dlengths_1
+            [i + 1, j]);
+        end for;
+        lengths_1FM[nFM_1, j] := 0.5*geometry.dlengths_1[nFM_1, j] + geometry.dlengths_1
+          [nFM_1 + 1, j];
+      end if;
+    elseif exposeState_a1 and not exposeState_b1 then
+      /* Geometry Variables */
+      for i in 1:nFM_1 loop
+        crossAreas_1FM[i, j] := geometry.crossAreas_1[i + 1, j];
+      end for;
+     if geometry.closedDim_1[j] then
+      if nFM_1 == 1 then
+        lengths_1FM[1, j] := geometry.dlengths_1[1, j];
+      else
+        for i in 1:nFM_1 - 1 loop
+          lengths_1FM[i, j] := 0.5*(geometry.dlengths_1[i, j] + geometry.dlengths_1
+            [i + 1, j]);
+        end for;
+        lengths_1FM[nFM_1, j] := geometry.dlengths_1[nFM_1, j];
+      end if;
+     else
+      if nFM_1 == 1 then
+        lengths_1FM[1, j] := geometry.dlengths_1[1, j];
+      else
+        lengths_1FM[1, j] := geometry.dlengths_1[1, j] + 0.5*geometry.dlengths_1
+          [2, j];
+        for i in 2:nFM_1 - 1 loop
+          lengths_1FM[i, j] := 0.5*(geometry.dlengths_1[i, j] + geometry.dlengths_1
+            [i + 1, j]);
+        end for;
+        lengths_1FM[nFM_1, j] := 0.5*geometry.dlengths_1[nFM_1, j];
+      end if;
+     end if;
+   elseif not exposeState_a1 and exposeState_b1 then
+    /* Geometry Variables */
+      for i in 1:nFM_1 loop
+        crossAreas_1FM[i, j] := geometry.crossAreas_1[i, j];
+      end for;
+     if geometry.closedDim_1[j] then
+      if nFM_1 == 1 then
+        lengths_1FM[1, j] := geometry.dlengths_1[1, j];
+      else
+        lengths_1FM[1, j] := 0.5*geometry.dlengths_1[1, j];
+        for i in 2:nFM_1 loop
+          lengths_1FM[i, j] := 0.5*(geometry.dlengths_1[i - 1, j] + geometry.dlengths_1
+            [i, j]);
+        end for;
+      end if;
+     else
+      if nFM_1 == 1 then
+        lengths_1FM[1, j] := geometry.dlengths_1[1, j];
+      else
+        lengths_1FM[1, j] := 0.5*geometry.dlengths_1[1, j];
+        for i in 2:nFM_1 - 1 loop
+          lengths_1FM[i, j] := 0.5*(geometry.dlengths_1[i - 1, j] + geometry.dlengths_1
+            [i, j]);
+        end for;
+        lengths_1FM[nFM_1, j] := 0.5*geometry.dlengths_1[nFM_1 - 1, j] +
+          geometry.dlengths_1[nFM_1, j];
+      end if;
+     end if;
+    elseif not exposeState_a1 and not exposeState_b1 then
+      /* Geometry Variables */
+      for i in 1:nFM_1 loop
+        crossAreas_1FM[i, j] := geometry.crossAreas_1[i, j];
+      end for;
+      lengths_1FM[1, j] := 0.5*geometry.dlengths_1[1, j];
+      for i in 2:nFM_1 - 1 loop
+        lengths_1FM[i, j] := 0.5*(geometry.dlengths_1[i - 1, j] + geometry.dlengths_1
+          [i, j]);
+      end for;
+      lengths_1FM[nFM_1, j] := 0.5*geometry.dlengths_1[nFM_1 - 1, j];
+    else
+      assert(false, "Unknown model structure");
+    end if;
+  end for;
+  if exposeState_a2 and exposeState_b2 then
+    assert(nVs[2] > 1,
+      "nVs[2] must be > 1 if exposeState_a2 and exposeState_b2 = true");
+  end if;
+  for i in 1:nVs[1] loop
+    if exposeState_a2 and exposeState_b2 then
+      /* Geometry Variables */
+      for j in 1:nFM_2 loop
+        crossAreas_2FM[i, j] := geometry.crossAreas_2[i, j + 1];
+      end for;
+      if nFM_2 == 1 then
+        lengths_2FM[i, 1] := geometry.dlengths_2[i, 1] + geometry.dlengths_2[i,
+          2];
+      else
+        lengths_2FM[i, 1] := geometry.dlengths_2[i, 1] + 0.5*geometry.dlengths_2
+          [i, 2];
+        for j in 2:nFM_2 - 1 loop
+          lengths_2FM[i, j] := 0.5*(geometry.dlengths_2[i, j] + geometry.dlengths_2
+            [i, j + 1]);
+        end for;
+        lengths_2FM[i, nFM_2] := 0.5*geometry.dlengths_2[i, nFM_2] + geometry.dlengths_2
+          [i, nFM_2 + 1];
+      end if;
+    elseif exposeState_a2 and not exposeState_b2 then
+      /* Geometry Variables */
+      for j in 1:nFM_2 loop
+        crossAreas_2FM[i, j] := geometry.crossAreas_2[i, j + 1];
+      end for;
+     if geometry.closedDim_2[i] then
+      if nFM_2 == 1 then
+        lengths_2FM[i, 1] := geometry.dlengths_2[i, 1];
+      else
+        for j in 1:nFM_2 - 1 loop
+          lengths_2FM[i, j] := 0.5*(geometry.dlengths_2[i, j] + geometry.dlengths_2
+            [i, j + 1]);
+        end for;
+        lengths_2FM[i, nFM_2] := geometry.dlengths_2[i, nFM_2];
+      end if;
+     else
+      if nFM_2 == 1 then
+        lengths_2FM[i, 1] := geometry.dlengths_2[i, 1];
+      else
+        lengths_2FM[i, 1] := geometry.dlengths_2[i, 1] + 0.5*geometry.dlengths_2
+          [i, 2];
+        for j in 2:nFM_2 - 1 loop
+          lengths_2FM[i, j] := 0.5*(geometry.dlengths_2[i, j] + geometry.dlengths_2
+            [i, j + 1]);
+        end for;
+        lengths_2FM[i, nFM_2] := 0.5*geometry.dlengths_2[i, nFM_2];
+      end if;
+     end if;
+    elseif not exposeState_a2 and exposeState_b2 then
+      /* Geometry Variables */
+      for j in 1:nFM_2 loop
+        crossAreas_2FM[i, j] := geometry.crossAreas_2[i, j];
+      end for;
+     if geometry.closedDim_2[i] then
+      if nFM_2 == 1 then
+        lengths_2FM[i, 1] := geometry.dlengths_2[i, 1];
+      else
+        lengths_2FM[i, 1] := geometry.dlengths_2[i, 1];
+        for j in 2:nFM_2 loop
+          lengths_2FM[i, j] := 0.5*(geometry.dlengths_2[i, j - 1] + geometry.dlengths_2
+            [i, j]);
+        end for;
+      end if;
+     else
+      if nFM_2 == 1 then
+        lengths_2FM[i, 1] := geometry.dlengths_2[i, 1];
+      else
+        lengths_2FM[i, 1] := 0.5*geometry.dlengths_2[i, 1];
+        for j in 2:nFM_2 - 1 loop
+          lengths_2FM[i, j] := 0.5*(geometry.dlengths_2[i, j - 1] + geometry.dlengths_2
+            [i, j]);
+        end for;
+        lengths_2FM[i, nFM_2] := 0.5*geometry.dlengths_2[i, nFM_2 - 1] +
+          geometry.dlengths_2[i, nFM_2];
+      end if;
+     end if;
+    elseif not exposeState_a2 and not exposeState_b2 then
+      /* Geometry Variables */
+      for j in 1:nFM_2 loop
+        crossAreas_2FM[i, j] := geometry.crossAreas_2[i, j];
+      end for;
+      lengths_2FM[i, 1] := 0.5*geometry.dlengths_2[i, 1];
+      for j in 2:nFM_2 - 1 loop
+        lengths_2FM[i, j] := 0.5*(geometry.dlengths_2[i, j - 1] + geometry.dlengths_2
+          [i, j]);
+      end for;
+      lengths_2FM[i, nFM_2] := 0.5*geometry.dlengths_2[i, nFM_2 - 1];
+    else
+      assert(false, "Unknown model structure");
+    end if;
+  end for;    
 equation
   for i in 1:nVs[1] loop
     for j in 1:nVs[2] loop
@@ -192,23 +382,6 @@ equation
       for i in 1:nFM_1 + 1 loop
         statesFM_1[i, j] = materials[i, j].state;
       end for;
-      /* Geometry Variables */
-      for i in 1:nFM_1 loop
-        crossAreas_1FM[i, j] = geometry.crossAreas_1[i + 1, j];
-      end for;
-      if nFM_1 == 1 then
-        lengths_1FM[1, j] = geometry.dlengths_1[1, j] + geometry.dlengths_1[2,
-          j];
-      else
-        lengths_1FM[1, j] = geometry.dlengths_1[1, j] + 0.5*geometry.dlengths_1
-          [2, j];
-        for i in 2:nFM_1 - 1 loop
-          lengths_1FM[i, j] = 0.5*(geometry.dlengths_1[i, j] + geometry.dlengths_1
-            [i + 1, j]);
-        end for;
-        lengths_1FM[nFM_1, j] = 0.5*geometry.dlengths_1[nFM_1, j] + geometry.dlengths_1
-          [nFM_1 + 1, j];
-      end if;
     elseif exposeState_a1 and not exposeState_b1 then
       /************************************************************************/
       /*             1.b Model Structure (true, false) (i.e., v_)             */
@@ -225,33 +398,6 @@ equation
         statesFM_1[i, j] = materials[i, j].state;
       end for;
       statesFM_1[nFM_1 + 1, j] = state_b1[j];
-      /* Geometry Variables */
-      for i in 1:nFM_1 loop
-        crossAreas_1FM[i, j] = geometry.crossAreas_1[i + 1, j];
-      end for;
-     if geometry.closedDim_1[j] then
-      if nFM_1 == 1 then
-        lengths_1FM[1, j] = geometry.dlengths_1[1, j];
-      else
-        for i in 1:nFM_1 - 1 loop
-          lengths_1FM[i, j] = 0.5*(geometry.dlengths_1[i, j] + geometry.dlengths_1
-            [i + 1, j]);
-        end for;
-        lengths_1FM[nFM_1, j] = geometry.dlengths_1[nFM_1, j];
-      end if;
-     else
-      if nFM_1 == 1 then
-        lengths_1FM[1, j] = geometry.dlengths_1[1, j];
-      else
-        lengths_1FM[1, j] = geometry.dlengths_1[1, j] + 0.5*geometry.dlengths_1
-          [2, j];
-        for i in 2:nFM_1 - 1 loop
-          lengths_1FM[i, j] = 0.5*(geometry.dlengths_1[i, j] + geometry.dlengths_1
-            [i + 1, j]);
-        end for;
-        lengths_1FM[nFM_1, j] = 0.5*geometry.dlengths_1[nFM_1, j];
-      end if;
-     end if;
     elseif not exposeState_a1 and exposeState_b1 then
       /************************************************************************/
       /*             1.c Model Structure (false, true) (i.e., _v)             */
@@ -268,33 +414,6 @@ equation
       for i in 2:nFM_1 + 1 loop
         statesFM_1[i, j] = materials[i - 1, j].state;
       end for;
-      /* Geometry Variables */
-      for i in 1:nFM_1 loop
-        crossAreas_1FM[i, j] = geometry.crossAreas_1[i, j];
-      end for;
-     if geometry.closedDim_1[j] then
-      if nFM_1 == 1 then
-        lengths_1FM[1, j] = geometry.dlengths_1[1, j];
-      else
-        lengths_1FM[1, j] = 0.5*geometry.dlengths_1[1, j];
-        for i in 2:nFM_1 loop
-          lengths_1FM[i, j] = 0.5*(geometry.dlengths_1[i - 1, j] + geometry.dlengths_1
-            [i, j]);
-        end for;
-      end if;
-     else
-      if nFM_1 == 1 then
-        lengths_1FM[1, j] = geometry.dlengths_1[1, j];
-      else
-        lengths_1FM[1, j] = 0.5*geometry.dlengths_1[1, j];
-        for i in 2:nFM_1 - 1 loop
-          lengths_1FM[i, j] = 0.5*(geometry.dlengths_1[i - 1, j] + geometry.dlengths_1
-            [i, j]);
-        end for;
-        lengths_1FM[nFM_1, j] = 0.5*geometry.dlengths_1[nFM_1 - 1, j] +
-          geometry.dlengths_1[nFM_1, j];
-      end if;
-     end if;
     elseif not exposeState_a1 and not exposeState_b1 then
       /************************************************************************/
       /*            1.d Model Structure (false, false) (i.e., _v_)            */
@@ -311,16 +430,6 @@ equation
         statesFM_1[i, j] = materials[i - 1, j].state;
       end for;
       statesFM_1[nFM_1 + 1, j] = state_b1[j];
-      /* Geometry Variables */
-      for i in 1:nFM_1 loop
-        crossAreas_1FM[i, j] = geometry.crossAreas_1[i, j];
-      end for;
-      lengths_1FM[1, j] = 0.5*geometry.dlengths_1[1, j];
-      for i in 2:nFM_1 - 1 loop
-        lengths_1FM[i, j] = 0.5*(geometry.dlengths_1[i - 1, j] + geometry.dlengths_1
-          [i, j]);
-      end for;
-      lengths_1FM[nFM_1, j] = 0.5*geometry.dlengths_1[nFM_1 - 1, j];
     else
       assert(false, "Unknown model structure");
     end if;
@@ -349,23 +458,6 @@ equation
       for j in 1:nFM_2 + 1 loop
         statesFM_2[i, j] = materials[i, j].state;
       end for;
-      /* Geometry Variables */
-      for j in 1:nFM_2 loop
-        crossAreas_2FM[i, j] = geometry.crossAreas_2[i, j + 1];
-      end for;
-      if nFM_2 == 1 then
-        lengths_2FM[i, 1] = geometry.dlengths_2[i, 1] + geometry.dlengths_2[i,
-          2];
-      else
-        lengths_2FM[i, 1] = geometry.dlengths_2[i, 1] + 0.5*geometry.dlengths_2
-          [i, 2];
-        for j in 2:nFM_2 - 1 loop
-          lengths_2FM[i, j] = 0.5*(geometry.dlengths_2[i, j] + geometry.dlengths_2
-            [i, j + 1]);
-        end for;
-        lengths_2FM[i, nFM_2] = 0.5*geometry.dlengths_2[i, nFM_2] + geometry.dlengths_2
-          [i, nFM_2 + 1];
-      end if;
     elseif exposeState_a2 and not exposeState_b2 then
       /************************************************************************/
       /*             2.b Model Structure (true, false) (i.e., v_)             */
@@ -382,33 +474,6 @@ equation
         statesFM_2[i, j] = materials[i, j].state;
       end for;
       statesFM_2[i, nFM_2 + 1] = state_b2[i];
-      /* Geometry Variables */
-      for j in 1:nFM_2 loop
-        crossAreas_2FM[i, j] = geometry.crossAreas_2[i, j + 1];
-      end for;
-     if geometry.closedDim_2[i] then
-      if nFM_2 == 1 then
-        lengths_2FM[i, 1] = geometry.dlengths_2[i, 1];
-      else
-        for j in 1:nFM_2 - 1 loop
-          lengths_2FM[i, j] = 0.5*(geometry.dlengths_2[i, j] + geometry.dlengths_2
-            [i, j + 1]);
-        end for;
-        lengths_2FM[i, nFM_2] = geometry.dlengths_2[i, nFM_2];
-      end if;
-     else
-      if nFM_2 == 1 then
-        lengths_2FM[i, 1] = geometry.dlengths_2[i, 1];
-      else
-        lengths_2FM[i, 1] = geometry.dlengths_2[i, 1] + 0.5*geometry.dlengths_2
-          [i, 2];
-        for j in 2:nFM_2 - 1 loop
-          lengths_2FM[i, j] = 0.5*(geometry.dlengths_2[i, j] + geometry.dlengths_2
-            [i, j + 1]);
-        end for;
-        lengths_2FM[i, nFM_2] = 0.5*geometry.dlengths_2[i, nFM_2];
-      end if;
-     end if;
     elseif not exposeState_a2 and exposeState_b2 then
       /************************************************************************/
       /*             2.c Model Structure (false, true) (i.e., _v)             */
@@ -425,33 +490,6 @@ equation
       for j in 2:nFM_2 + 1 loop
         statesFM_2[i, j] = materials[i, j - 1].state;
       end for;
-      /* Geometry Variables */
-      for j in 1:nFM_2 loop
-        crossAreas_2FM[i, j] = geometry.crossAreas_2[i, j];
-      end for;
-     if geometry.closedDim_2[i] then
-      if nFM_2 == 1 then
-        lengths_2FM[i, 1] = geometry.dlengths_2[i, 1];
-      else
-        lengths_2FM[i, 1] = geometry.dlengths_2[i, 1];
-        for j in 2:nFM_2 loop
-          lengths_2FM[i, j] = 0.5*(geometry.dlengths_2[i, j - 1] + geometry.dlengths_2
-            [i, j]);
-        end for;
-      end if;
-     else
-      if nFM_2 == 1 then
-        lengths_2FM[i, 1] = geometry.dlengths_2[i, 1];
-      else
-        lengths_2FM[i, 1] = 0.5*geometry.dlengths_2[i, 1];
-        for j in 2:nFM_2 - 1 loop
-          lengths_2FM[i, j] = 0.5*(geometry.dlengths_2[i, j - 1] + geometry.dlengths_2
-            [i, j]);
-        end for;
-        lengths_2FM[i, nFM_2] = 0.5*geometry.dlengths_2[i, nFM_2 - 1] +
-          geometry.dlengths_2[i, nFM_2];
-      end if;
-     end if;
     elseif not exposeState_a2 and not exposeState_b2 then
       /************************************************************************/
       /*            2.d Model Structure (false, false) (i.e., _v_)            */
@@ -468,16 +506,6 @@ equation
         statesFM_2[i, j] = materials[i, j - 1].state;
       end for;
       statesFM_2[i, nFM_2 + 1] = state_b2[i];
-      /* Geometry Variables */
-      for j in 1:nFM_2 loop
-        crossAreas_2FM[i, j] = geometry.crossAreas_2[i, j];
-      end for;
-      lengths_2FM[i, 1] = 0.5*geometry.dlengths_2[i, 1];
-      for j in 2:nFM_2 - 1 loop
-        lengths_2FM[i, j] = 0.5*(geometry.dlengths_2[i, j - 1] + geometry.dlengths_2
-          [i, j]);
-      end for;
-      lengths_2FM[i, nFM_2] = 0.5*geometry.dlengths_2[i, nFM_2 - 1];
     else
       assert(false, "Unknown model structure");
     end if;

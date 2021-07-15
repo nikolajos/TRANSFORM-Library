@@ -9,7 +9,7 @@ partial model PartialDistributedVolume
     annotation (choicesAllMatching=true);
   parameter Integer nV(min=1) = 1 "Number of discrete volumes";
   // Inputs provided to the volume model
-  input SI.Volume Vs[nV](min=fill(0, nV)) "Discretized volumes"
+  parameter SI.Volume Vs[nV](min=fill(0, nV)) "Discretized volumes"
     annotation (Dialog(group="Inputs"));
   // Initialization
   parameter Dynamics energyDynamics=Dynamics.DynamicFreeInitial

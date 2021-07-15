@@ -107,7 +107,7 @@ model PointKinetics_L1_powerBased
   parameter SI.Power[:,2] history=fill(
       0,
       0,
-      2) "Power history up to simulation time=0, [t,Q]" annotation (Dialog(
+      2) if use_history "Power history up to simulation time=0, [t,Q]" annotation (Dialog(
       tab="Kinetics",
       group="Decay-Heat",
       enable=use_history));
@@ -116,8 +116,8 @@ model PointKinetics_L1_powerBased
       tab="Kinetics",
       group="Decay-Heat",
       enable=use_history));
-  final parameter SI.Power Cs_start_history[nC](fixed=false);
-  final parameter SI.Energy Es_start_history[nDH](fixed=false);
+  final parameter SI.Power Cs_start_history[nC](each fixed=false);
+  final parameter SI.Energy Es_start_history[nDH](each fixed=false);
   // Advanced
   parameter Dynamics energyDynamics=Dynamics.DynamicFreeInitial
     "Formulation of nuclear kinetics balances"
@@ -270,16 +270,18 @@ model PointKinetics_L1_powerBased
     annotation (Dialog(tab="Advanced"));
 initial equation
   V_start = V;
-  (Cs_start_history,Es_start_history) =
-    TRANSFORM.Nuclear.ReactorKinetics.Functions.Initial_powerBased_powerHistory(
-    history,
-    lambdas_start,
-    alphas_start,
-    Beta_start,
-    Lambda_start,
-    lambdas_dh_start,
-    efs_dh_start,
-    includeDH=includeDH);
+  if use_history then
+    (Cs_start_history,Es_start_history) =
+      TRANSFORM.Nuclear.ReactorKinetics.Functions.Initial_powerBased_powerHistory(
+      history,
+      lambdas_start,
+      alphas_start,
+      Beta_start,
+      Lambda_start,
+      lambdas_dh_start,
+      efs_dh_start,
+      includeDH=includeDH);
+  end if;
   if not specifyPower then
     if energyDynamics == Dynamics.FixedInitial then
       Q_fission =Q_fission_start;

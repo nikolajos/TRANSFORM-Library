@@ -18,4 +18,5 @@ algorithm
       n);
     end for;
   end for;
+  annotation(Inline = true);
 end linspaceRepeat_1D_multi;

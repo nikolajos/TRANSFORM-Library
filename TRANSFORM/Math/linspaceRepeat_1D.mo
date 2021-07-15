@@ -15,4 +15,5 @@ algorithm
       x2[i],
       n);
   end for;
+  annotation(Inline = true);
 end linspaceRepeat_1D;

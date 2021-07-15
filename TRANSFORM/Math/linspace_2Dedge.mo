@@ -183,7 +183,7 @@ algorithm
     end for;
   end for;
 end if;
-  annotation (smoothOrder=2, Documentation(info="<html>
+  annotation (Inline = true, smoothOrder=2, Documentation(info="<html>
 <p>For example:</p>
 <p>For x1=0, x2=10, x3=-5, x4 = 5, n1=5, and n2=3.</p>
 <p>The returned matrix is y[5,3]</p>
