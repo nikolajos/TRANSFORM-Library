@@ -4,6 +4,7 @@ model ShellNozzleFlow
   extends
     TRANSFORM.Fluid.ClosureRelations.PressureLoss.Models.DistributedPipe_1D.PartialSinglePhase;
   // Shell Model (Nozzle) Parameters
+  constant Integer nParallel = 1;
   parameter SI.Length d_N "Nozzle diameter"
   annotation(Dialog(tab="Shell Model (Nozzle) Parameters"));
   parameter SI.Length d_o "Outer diameter of tubes"
@@ -37,6 +38,42 @@ model ShellNozzleFlow
     mu_a=mus_a,
     mu_b=mus_b)
     annotation (Placement(transformation(extent={{-60,20},{-40,40}})));
+  // Parameters
+  parameter SI.AbsolutePressure dp_nominal(start=1, fixed=false)
+    "Nominal pressure loss (only for nominal models)" annotation (Dialog(tab="Advanced", group="Nominal Conditions", enable=false));
+  parameter SI.MassFlowRate m_flow_nominal=1e2*m_flow_small
+    "Nominal mass flow rate"
+    annotation (Dialog(tab="Advanced", group="Nominal Conditions"));
+  parameter Boolean use_d_nominal=false
+    "= true, if d_nominal is used, otherwise computed from medium" annotation (
+      Dialog(tab="Advanced", group="Nominal Conditions"), Evaluate=true);
+  parameter SI.Density d_nominal=Medium.density_phX(
+      Medium.p_default,
+      Medium.h_default,
+      Medium.X_default)
+    "Nominal density (e.g., rho_liquidWater = 995, rho_air = 1.2)" annotation (
+      Dialog(
+      tab="Advanced",
+      group="Nominal Conditions",
+      enable=use_d_nominal));
+  parameter Boolean use_mu_nominal=false
+    "= true, if mu_nominal is used, otherwise computed from medium" annotation (
+     Dialog(tab="Advanced", group="Nominal Conditions"), Evaluate=true);
+  parameter SI.DynamicViscosity mu_nominal=Medium.dynamicViscosity(
+      Medium.setState_phX(
+      Medium.p_default,
+      Medium.h_default,
+      Medium.X_default))
+    "Nominal dynamic viscosity (e.g., mu_liquidWater = 1e-3, mu_air = 1.8e-5)"
+    annotation (Dialog(
+      tab="Advanced",
+      group="Nominal Conditions",
+      enable=use_mu_nominal));
+  parameter Boolean continuousFlowReversal=if use_d_nominal and use_mu_nominal
+       then true else false
+    "= true if the pressure loss is continuous around zero flow" annotation (
+      Dialog(tab="Advanced", group="Nominal Conditions"), Evaluate=true);
+
 protected
   SI.Density[nFM] rhos_a "Density at port_a";
   SI.Density[nFM] rhos_b "Density at port_b";
@@ -50,18 +87,14 @@ protected
     rho_b=rho_nominal,
     mu_a=mu_nominal,
     mu_b=mu_nominal);
+/*
   parameter SI.AbsolutePressure dp_small(start=1, fixed=false)
     "Within regularization if |dp| < dp_small (may be wider for large discontinuities in static head)"
     annotation (Dialog(enable=from_dp and use_dp_small));
+*/
   final parameter Boolean constantPressureLossCoefficient=
      use_rho_nominal and (use_mu_nominal or not use_mu)
     "= true if the pressure loss does not depend on fluid states"
-     annotation(Evaluate=true);
-  final parameter Boolean continuousFlowReversal=
-     (not useUpstreamScheme)
-     or constantPressureLossCoefficient
-     or not allowFlowReversal
-    "= true if the pressure loss is continuous around zero flow"
      annotation(Evaluate=true);
   SI.AbsolutePressure dp_fric_nominal=sum(
       TRANSFORM.Fluid.Pipes_Obsolete.ClosureModels.PressureLoss.HeatExchangers.BellDelawareShell.Nozzle.dp_DP(

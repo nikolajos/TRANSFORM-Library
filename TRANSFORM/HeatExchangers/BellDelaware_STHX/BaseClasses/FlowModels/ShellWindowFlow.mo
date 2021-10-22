@@ -83,9 +83,10 @@ protected
     mu_a=mu_nominal,
     mu_b=mu_nominal,
     mu_w=mu_w__nominal);
-  parameter SI.AbsolutePressure dp_small(start=1, fixed=false)
+/*  parameter SI.AbsolutePressure dp_small(start=1, fixed=false)
     "Within regularization if |dp| < dp_small (may be wider for large discontinuities in static head)"
     annotation (Dialog(enable=from_dp and use_dp_small));
+*/
   final parameter Boolean constantPressureLossCoefficient=
      use_rho_nominal and (use_mu_nominal or not use_mu)
     "= true if the pressure loss does not depend on fluid states"

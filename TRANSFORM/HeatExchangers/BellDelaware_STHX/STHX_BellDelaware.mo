@@ -324,11 +324,14 @@ annotation (Dialog(group="Tube Parameters"));
   parameter Integer nNodes_centerCross(min=1)=1
     "Number of discrete flow volumes in each centerCross segment"
     annotation(Dialog(tab="Advanced"));
-  parameter Modelica.Fluid.Types.ModelStructure modelStructure_shell=Modelica.Fluid.Types.ModelStructure.av_b
-    "Determines whether flow or volume models are present at the ports" annotation (Dialog(tab="Advanced"));
-  parameter Modelica.Fluid.Types.ModelStructure modelStructure_tube=Modelica.Fluid.Types.ModelStructure.av_b
-    "Set ports as flow or volume models"
-    annotation (Dialog(tab="Advanced"));
+  parameter Boolean exposeState_a_tube=true
+    "=true, p is calculated at port_a else m_flow" annotation (Dialog(tab="Advanced", group="Model Structure"));
+  parameter Boolean exposeState_b_tube=false
+    "=true, p is calculated at port_b else m_flow" annotation (Dialog(tab="Advanced", group="Model Structure"));
+  parameter Boolean exposeState_a_shell=true
+    "=true, p is calculated at port_a else m_flow" annotation (Dialog(tab="Advanced", group="Model Structure"));
+  parameter Boolean exposeState_b_shell=false
+    "=true, p is calculated at port_b else m_flow" annotation (Dialog(tab="Advanced", group="Model Structure"));
   final parameter Integer nNodes_intTotal = nNodes_endCross + (nb-1)*(nNodes_window+nNodes_centerCross) + nNodes_window + nNodes_endCross
     "Total number of nodes internal to the shell (i.e., not including nozzles and entry pipes)";
   final parameter Integer nNodes_Total = nNodes_entryPipe_a +  nNodes_nozzle + nNodes_intTotal +  nNodes_nozzle + nNodes_entryPipe_b
@@ -360,6 +363,8 @@ annotation (Dialog(group="Tube Parameters"));
     energyDynamics=energyDynamics_tube,
     massDynamics=massDynamics_tube,
     momentumDynamics=momentumDynamics_tube,
+    exposeState_a=exposeState_a_tube,
+    exposeState_b=exposeState_b_tube,
     redeclare model Geometry =
         TRANSFORM.Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe (
         dimension=2*r_inner,
@@ -374,7 +379,7 @@ annotation (Dialog(group="Tube Parameters"));
         origin={-60,0})));
   TRANSFORM.HeatAndMassTransfer.DiscritizedModels.ClassicalMethod.Cylinder_FD
     tubewall(
-    redeclare package material = Tube_Material,
+    redeclare package Material = Tube_Material,
     r_inner=r_inner,
     nR=nRadial,
     length=sum(tube.lengths),
@@ -462,7 +467,8 @@ annotation (Dialog(group="Tube Parameters"));
     nNodes_endCross=nNodes_endCross,
     nNodes_window=nNodes_window,
     nNodes_centerCross=nNodes_centerCross,
-    modelStructure= modelStructure_shell,
+    exposeState_a=exposeState_a_tube,
+    exposeState_b=exposeState_b_tube,
     isGas=isGas,
     np=np,
     nParallel=nParallel,

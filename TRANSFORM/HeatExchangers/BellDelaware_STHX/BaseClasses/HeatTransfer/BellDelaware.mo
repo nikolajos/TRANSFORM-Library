@@ -2,7 +2,7 @@ within TRANSFORM.HeatExchangers.BellDelaware_STHX.BaseClasses.HeatTransfer;
 model BellDelaware
   "BellDelaware: Single phase (oil/water)  correlation for flow in the shell side of a STHX"
   extends
-    TRANSFORM.Fluid.ClosureRelations.HeatTransfer.Models.DistributedPipe_1D.PartialHeatTransfer_setT;
+    TRANSFORM.Fluid.ClosureRelations.HeatTransfer.Models.DistributedPipe_1D_MultiTransferSurface.PartialHeatTransfer_setT;
   import Modelica.Math.exp;
   import Modelica.Constants.pi;
   parameter Boolean isGas = false "true if Medium is a gas";

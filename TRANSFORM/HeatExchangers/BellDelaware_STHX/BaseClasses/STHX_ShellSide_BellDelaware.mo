@@ -188,8 +188,10 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
   parameter Integer nNodes_centerCross(min=1)=1
     "Number of discrete flow volumes in each centerCross segment"
     annotation(Dialog(tab="Advanced"));
-  parameter Modelica.Fluid.Types.ModelStructure modelStructure=Modelica.Fluid.Types.ModelStructure.av_b
-    "Determines whether flow or volume models are present at the ports" annotation (Dialog(tab="Advanced"));
+  parameter Boolean exposeState_a=true "=true, p is calculated at port_a else m_flow"
+    annotation (Dialog(group="Model Structure", tab="Advanced"));
+  parameter Boolean exposeState_b=false "=true, p is calculated at port_b else m_flow"
+    annotation (Dialog(group="Model Structure", tab="Advanced"));
   final parameter Integer nNodes_intTotal = nNodes_endCross + (nb-1)*(nNodes_window+nNodes_centerCross) + nNodes_window + nNodes_endCross
     "Total number of nodes internal to the shell (i.e., not including nozzles and entry pipes)";
   final parameter Integer nNodes_Total = nNodes_entryPipe_a + nNodes_nozzle + nNodes_intTotal + nNodes_nozzle + nNodes_entryPipe_b
@@ -227,29 +229,34 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
   final parameter SI.Length U_W = pi*D_i*gamma/360+pi*d_o*n_W/2
     "Approximate wetted perimeter for window region";
   TRANSFORM.Fluid.Pipes.GenericPipe_MultiTransferSurface entryPipe_a(
+    redeclare model Geometry = Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe(
+        length=length_entryPipe_a,
+        dimension=d_N_a,
+        roughness=roughness_entryPipe_a,
+        nV=nNodes_entryPipe_a,
+        height_a=height_a,
+        dheight=dheight_entryPipe_a),
     nParallel=nParallel,
-    length=length_entryPipe_a,
-    diameter=d_N_a,
-    roughness=roughness_entryPipe_a,
     redeclare package Medium = Medium,
     p_a_start=ps_start[1],
     p_b_start=ps_start[nNodes_entryPipe_a],
+    exposeState_a=exposeState_a,
+    exposeState_b=not exposeState_a,
+/*
     modelStructure=if modelStructure == Modelica.Fluid.Types.ModelStructure.a_v_b
          then Modelica.Fluid.Types.ModelStructure.a_vb elseif
         modelStructure == Modelica.Fluid.Types.ModelStructure.a_vb then
         Modelica.Fluid.Types.ModelStructure.a_vb else Modelica.Fluid.Types.ModelStructure.av_b,
+*/
     allowFlowReversal=allowFlowReversal,
     energyDynamics=energyDynamics,
     massDynamics=massDynamics,
     momentumDynamics=momentumDynamics,
-    nV=nNodes_entryPipe_a,
     ps_start=ps_start[1:nNodes_entryPipe_a],
     T_a_start=Ts_start[1],
     T_b_start=Ts_start[nNodes_entryPipe_a],
     Ts_start=Ts_start[1:nNodes_entryPipe_a],
-    m_flow_a_start=m_flow_start,
-    height_a=height_a,
-    dheight=dheight_entryPipe_a)
+    m_flow_a_start=m_flow_start)
     "This pipe serves to capture the pressure drop not captued by the nozzle dP (i.e., length and static dP), if any, for nozzle_a"
     annotation (Placement(transformation(
         extent={{-10,10},{10,-10}},
@@ -257,22 +264,26 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         origin={-70,50})));
   TRANSFORM.Fluid.Pipes.GenericPipe_MultiTransferSurface nozzle_a(
     redeclare package Medium = Medium,
+    redeclare model Geometry = Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe(
+        dimension=d_N_a,
+        length=0.01,
+        nV=nNodes_nozzle,
+        height_a=entryPipe_a.height_b),
     redeclare model FlowModel = FlowModels.ShellNozzleFlow (
         d_o=d_o,
         n_T=n_T,
         D_i=D_i,
         D_BE=D_BE,
         d_N=d_N_a),
-    modelStructure=modelStructure,
+    exposeState_a=exposeState_a,
+    exposeState_b=exposeState_b,
+//    modelStructure=modelStructure,
     allowFlowReversal=allowFlowReversal,
     energyDynamics=energyDynamics,
     massDynamics=massDynamics,
     momentumDynamics=momentumDynamics,
-    diameter=d_N_a,
     use_HeatTransfer=false,
     nParallel=nParallel,
-    length=0.01,
-    nV=nNodes_nozzle,
     p_a_start=ps_start[nNodes_entryPipe_a + 1],
     p_b_start=ps_start[nNodes_entryPipe_a + nNodes_nozzle],
     ps_start=ps_start[nNodes_entryPipe_a + 1:nNodes_entryPipe_a +
@@ -281,27 +292,32 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
     T_b_start=Ts_start[nNodes_entryPipe_a + nNodes_nozzle],
     Ts_start=Ts_start[nNodes_entryPipe_a + 1:nNodes_entryPipe_a +
         nNodes_nozzle],
-    m_flow_a_start=m_flow_start,
-    height_a=entryPipe_a.height_b) annotation (Placement(transformation(
+    m_flow_a_start=m_flow_start) annotation (Placement(transformation(
         extent={{-10,10},{10,-10}},
         rotation=-90,
         origin={-70,20})));
   TRANSFORM.Fluid.Pipes.GenericPipe_MultiTransferSurface endCross_a(
     redeclare package Medium = Medium,
+    redeclare model Geometry = Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe(
+        length=(D_i - H),
+        crossArea=A_Eend_a,
+        perimeter=U_Eend_a,
+        nV=nNodes_endCross,
+        surfaceArea=(n_tubes - 0.5*n_W_tubes)*pi*d_o*(S_E_a + 0.5*th_B)/nNodes_endCross,
+        height_a=nozzle_a.height_b),
+    exposeState_a=if exposeState_a == exposeState_b then not exposeState_a else exposeState_a,
+    exposeState_b=if exposeState_a == exposeState_b then not exposeState_b else exposeState_b,
+/*
     modelStructure=if modelStructure == Modelica.Fluid.Types.ModelStructure.a_v_b
          then Modelica.Fluid.Types.ModelStructure.av_vb elseif
         modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb then
         Modelica.Fluid.Types.ModelStructure.a_v_b else modelStructure,
+*/
     nParallel=nParallel,
     allowFlowReversal=allowFlowReversal,
     energyDynamics=energyDynamics,
     massDynamics=massDynamics,
     momentumDynamics=momentumDynamics,
-    length=(D_i - H),
-    isCircular=false,
-    crossArea=A_Eend_a,
-    perimeter=U_Eend_a,
-    nV=nNodes_endCross,
     redeclare model FlowModel = FlowModels.ShellEndCrossFlow (
         d_o=d_o,
         D_i=D_i,
@@ -338,8 +354,6 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         isGas=isGas,
         np=np),
     use_HeatTransfer=true,
-    surfaceAreas=fill((n_tubes - 0.5*n_W_tubes)*pi*d_o*(S_E_a + 0.5*th_B)
-        /nNodes_endCross, nNodes_endCross),
     p_a_start=ps_start[nNodes_entryPipe_a + nNodes_nozzle + 1],
     p_b_start=ps_start[nNodes_entryPipe_a + nNodes_nozzle +
         nNodes_endCross],
@@ -356,25 +370,29 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         nNodes_endCross],
     hs_start=hs_start[nNodes_entryPipe_a + nNodes_nozzle + 1:
         nNodes_entryPipe_a + nNodes_nozzle + nNodes_endCross],
-    m_flow_a_start=m_flow_start,
-    height_a=nozzle_a.height_b) annotation (Placement(transformation(
+    m_flow_a_start=m_flow_start) annotation (Placement(transformation(
         extent={{-10,10},{10,-10}},
         rotation=-90,
         origin={-70,-20})));
   TRANSFORM.Fluid.Pipes.GenericPipe_MultiTransferSurface[nb - 1] window(
     redeclare each package Medium = Medium,
-    each modelStructure=modelStructure,
-    each nParallel=nParallel,
-    length={if i == 1 then (S_E_a + S + th_B)/nNodes_window else (2*S +
+    redeclare each package Geometry = Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe(
+        length={if i == 1 then (S_E_a + S + th_B)/nNodes_window else (2*S +
         th_B)/nNodes_window for i in 1:nb - 1},
-    each isCircular=false,
-    each crossArea=A_W,
-    each perimeter=U_W,
+        crossArea=A_W,
+        perimeter=U_W,
+        surfaceArea={0.5*n_W_tubes*pi*d_o*window[i].lengths for i in 1:nb - 1},
+        nV=nNodes_window,
+        height_a=heights_shell_a,
+        dheight=dheight_windows),
+    each exposeState_a=exposeState_a,
+    each exposeState_b=exposeState_b,
+//    each modelStructure=modelStructure,
+    each nParallel=nParallel,
     each allowFlowReversal=allowFlowReversal,
     each energyDynamics=energyDynamics,
     each massDynamics=massDynamics,
     each momentumDynamics=momentumDynamics,
-    each nV=nNodes_window,
     redeclare each model FlowModel = FlowModels.ShellWindowFlow (
         toggleStaggered=toggleStaggered,
         d_B=d_B,
@@ -411,8 +429,6 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         isGas=isGas,
         np=np),
     each use_HeatTransfer=true,
-    surfaceAreas={0.5*n_W_tubes*pi*d_o*window[i].lengths for i in 1:nb -
-        1},
     p_a_start={ps_start[nNodes_entryPipe_a + nNodes_nozzle +
         nNodes_endCross + 1 + (i - 1)*(nNodes_window + nNodes_centerCross)]
         for i in 1:nb - 1},
@@ -447,29 +463,33 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         :nNodes_entryPipe_a + nNodes_nozzle + nNodes_endCross +
         nNodes_window + (i - 1)*(nNodes_window + nNodes_centerCross)]
         for i in 1:nb - 1},
-    each m_flow_a_start=m_flow_start,
-    height_a=heights_shell_a,
-    each dheight=dheight_windows) if (nb > 1) annotation (Placement(
+    each m_flow_a_start=m_flow_start) if (nb > 1) annotation (Placement(
         transformation(
         extent={{-10,-10},{10,10}},
         rotation=0,
         origin={-30,-60})));
   TRANSFORM.Fluid.Pipes.GenericPipe_MultiTransferSurface[nb - 1] centerCross(
     redeclare each package Medium = Medium,
+    redeclare each model Geometry = Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe(
+        height_a=heights_shell_b,
+        length=(D_i - 2*H),
+        crossArea=A_Ecenter,
+        perimeter=U_Ecenter,
+        nV=nNodes_centerCross,
+        surfaceArea=(n_tubes - n_W_tubes)*pi*d_o*(S + th_B)/nNodes_centerCross, nNodes_centerCross),
+    each exposeState_a=if exposeState_a == exposeState_b then not exposeState_a else exposeState_a,
+    each exposeState_b=if exposeState_a == exposeState_b then not exposeState_b else exposeState_b,
+/*
     each modelStructure=if modelStructure == Modelica.Fluid.Types.ModelStructure.a_v_b
          then Modelica.Fluid.Types.ModelStructure.av_vb elseif
         modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb then
         Modelica.Fluid.Types.ModelStructure.a_v_b else modelStructure,
+*/
     each nParallel=nParallel,
-    each length=(D_i - 2*H),
-    each isCircular=false,
-    each crossArea=A_Ecenter,
-    each perimeter=U_Ecenter,
     each allowFlowReversal=allowFlowReversal,
     each energyDynamics=energyDynamics,
     each massDynamics=massDynamics,
     each momentumDynamics=momentumDynamics,
-    each nV=nNodes_centerCross,
     redeclare each model FlowModel = FlowModels.ShellCentralCrossFlow (
         toggleStaggered=toggleStaggered,
         d_B=d_B,
@@ -508,8 +528,6 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         isGas=isGas,
         np=np),
     each use_HeatTransfer=true,
-    each surfaceAreas=fill((n_tubes - n_W_tubes)*pi*d_o*(S + th_B)/
-        nNodes_centerCross, nNodes_centerCross),
     p_a_start={ps_start[nNodes_entryPipe_a + nNodes_nozzle +
         nNodes_endCross + nNodes_window + 1 + (i - 1)*(nNodes_window +
         nNodes_centerCross)] for i in 1:nb - 1},
@@ -544,25 +562,29 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         nNodes_centerCross):nNodes_entryPipe_a + nNodes_nozzle +
         nNodes_endCross + nNodes_window + nNodes_centerCross + (i - 1)*(
         nNodes_window + nNodes_centerCross)] for i in 1:nb - 1},
-    each m_flow_a_start=m_flow_start,
-    height_a=heights_shell_b) if (nb > 1) annotation (Placement(
+    each m_flow_a_start=m_flow_start) if (nb > 1) annotation (Placement(
         transformation(
         extent={{-10,-10},{10,10}},
         rotation=90,
         origin={0,-20})));
   TRANSFORM.Fluid.Pipes.GenericPipe_MultiTransferSurface window_b(
     redeclare package Medium = Medium,
-    modelStructure=modelStructure,
+    redeclare model Geometry = Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe(
+        length=if nb == 1 then (S_E_a + S_E_b + th_B) else (S + S_E_b + th_B),
+        crossArea=A_W,
+        perimeter=U_W,
+        nV=nNodes_window,
+        surfaceArea=0.5*n_W_tubes*pi*d_o*window_b.lengths,
+        height_a=heights_shell_a[nb],
+        dheight=dheight_windows),
+    exposeState_a=exposeState_a,
+    exposeState_b=exposeState_b,
+//    modelStructure=modelStructure,
     nParallel=nParallel,
-    length=if nb == 1 then (S_E_a + S_E_b + th_B) else (S + S_E_b + th_B),
-    isCircular=false,
-    crossArea=A_W,
-    perimeter=U_W,
     allowFlowReversal=allowFlowReversal,
     energyDynamics=energyDynamics,
     massDynamics=massDynamics,
     momentumDynamics=momentumDynamics,
-    nV=nNodes_window,
     redeclare model FlowModel = FlowModels.ShellWindowFlow (
         toggleStaggered=toggleStaggered,
         d_B=d_B,
@@ -599,7 +621,6 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         isGas=isGas,
         np=np),
     use_HeatTransfer=true,
-    surfaceAreas=0.5*n_W_tubes*pi*d_o*window_b.lengths,
     p_a_start=ps_start[nNodes_Total + 1 - (nNodes_entryPipe_b +
         nNodes_nozzle + nNodes_endCross + nNodes_window)],
     p_b_start=ps_start[nNodes_Total - (nNodes_entryPipe_b + nNodes_nozzle
@@ -621,27 +642,31 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
          + nNodes_endCross)],
     hs_start=hs_start[nNodes_Total + 1 - (nNodes_entryPipe_b +
         nNodes_nozzle + nNodes_endCross + nNodes_window):nNodes_Total - (
-        nNodes_entryPipe_b + nNodes_nozzle + nNodes_endCross)],
-    height_a=heights_shell_a[nb],
-    dheight=dheight_windows) annotation (Placement(transformation(
+        nNodes_entryPipe_b + nNodes_nozzle + nNodes_endCross)]) annotation (Placement(transformation(
         extent={{-10,-10},{10,10}},
         rotation=0,
         origin={50,-60})));
   TRANSFORM.Fluid.Pipes.GenericPipe_MultiTransferSurface endCross_b(
     redeclare package Medium = Medium,
+    redeclare model Geometry = Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe(
+        length=(D_i - H),
+        crossArea=A_Eend_b,
+        perimeter=U_Eend_b,
+        nV=nNodes_endCross,
+        surfaceArea=(n_tubes - 0.5*n_W_tubes)*pi*d_o*(S_E_b + 0.5*th_B)/nNodes_endCross,
+        height_a=window_b.height_b),
+    exposeState_a=if exposeState_a == exposeState_b then not exposeState_a else exposeState_a,
+    exposeState_b=if exposeState_a == exposeState_b then not exposeState_b else exposeState_b,
+/*
     modelStructure=if modelStructure == Modelica.Fluid.Types.ModelStructure.a_v_b
          then Modelica.Fluid.Types.ModelStructure.av_vb elseif
         modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb then
         Modelica.Fluid.Types.ModelStructure.a_v_b else modelStructure,
-    length=(D_i - H),
-    isCircular=false,
-    crossArea=A_Eend_b,
-    perimeter=U_Eend_b,
+*/
     allowFlowReversal=allowFlowReversal,
     energyDynamics=energyDynamics,
     massDynamics=massDynamics,
     momentumDynamics=momentumDynamics,
-    nV=nNodes_endCross,
     redeclare model FlowModel = FlowModels.ShellEndCrossFlow (
         d_o=d_o,
         D_i=D_i,
@@ -679,8 +704,6 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         np=np),
     nParallel=nParallel,
     use_HeatTransfer=true,
-    surfaceAreas=fill((n_tubes - 0.5*n_W_tubes)*pi*d_o*(S_E_b + 0.5*th_B)
-        /nNodes_endCross, nNodes_endCross),
     p_a_start=ps_start[nNodes_Total + 1 - (nNodes_entryPipe_b +
         nNodes_nozzle + nNodes_endCross)],
     p_b_start=ps_start[nNodes_Total - (nNodes_entryPipe_b + nNodes_nozzle)],
@@ -700,8 +723,7 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
     hs_start=hs_start[nNodes_Total + 1 - (nNodes_entryPipe_b +
         nNodes_nozzle + nNodes_endCross):nNodes_Total - (
         nNodes_entryPipe_b + nNodes_nozzle)],
-    m_flow_a_start=m_flow_start,
-    height_a=window_b.height_b) annotation (Placement(transformation(
+    m_flow_a_start=m_flow_start) annotation (Placement(transformation(
         extent={{-10,10},{10,-10}},
         rotation=90,
         origin={70,-20})));
@@ -713,10 +735,19 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         D_i=D_i,
         D_BE=D_BE,
         d_N=d_N_b),
+    redeclare model Geometry = Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe(
+        dimension=d_N_b,
+        length=0.01,
+        nV=nNodes_nozzle,
+        height_a=endCross_b.height_a),
+    exposeState_a=if exposeState_a == exposeState_b then exposeState_a else exposeState_b,
+    exposeState_b=if exposeState_a == exposeState_b then exposeState_b else exposeState_a,
+/*
     modelStructure=if modelStructure == Modelica.Fluid.Types.ModelStructure.a_vb
          then Modelica.Fluid.Types.ModelStructure.av_b elseif
         modelStructure == Modelica.Fluid.Types.ModelStructure.av_b then
         Modelica.Fluid.Types.ModelStructure.a_vb else modelStructure,
+*/
     p_a_start=ps_start[nNodes_Total - nNodes_entryPipe_b],
     p_b_start=ps_start[nNodes_Total + 1 - (nNodes_entryPipe_b +
         nNodes_nozzle)],
@@ -724,11 +755,8 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
     energyDynamics=energyDynamics,
     massDynamics=massDynamics,
     momentumDynamics=momentumDynamics,
-    diameter=d_N_b,
     use_HeatTransfer=false,
     nParallel=nParallel,
-    length=0.01,
-    nV=nNodes_nozzle,
     ps_start=ps_start[nNodes_Total - nNodes_entryPipe_b:nNodes_Total + 1
          - (nNodes_entryPipe_b + nNodes_nozzle)],
     T_a_start=Ts_start[nNodes_Total - nNodes_entryPipe_b],
@@ -736,35 +764,39 @@ annotation(Dialog(tab="Shell Side Part 2",group="Entry/Exit Region Parameters"))
         nNodes_nozzle)],
     Ts_start=Ts_start[nNodes_Total - nNodes_entryPipe_b:nNodes_Total + 1
          - (nNodes_entryPipe_b + nNodes_nozzle)],
-    height_a=endCross_b.height_a,
     m_flow_a_start=-m_flow_start) annotation (Placement(transformation(
         extent={{10,10},{-10,-10}},
         rotation=90,
         origin={70,20})));
   TRANSFORM.Fluid.Pipes.GenericPipe_MultiTransferSurface entryPipe_b(
     nParallel=nParallel,
-    length=length_entryPipe_b,
-    diameter=d_N_b,
-    roughness=roughness_entryPipe_b,
+    redeclare model Geometry = Fluid.ClosureRelations.Geometry.Models.DistributedVolume_1D.StraightPipe(
+        length=length_entryPipe_b,
+        dimension=d_N_b,
+        roughness=roughness_entryPipe_b,
+        dheight=dheight_entryPipe_b,
+        nV=nNodes_entryPipe_b,
+        height_a=nozzle_b.geometry.height_a),
     redeclare package Medium = Medium,
     p_a_start=ps_start[nNodes_Total + 1 - nNodes_entryPipe_b],
     p_b_start=ps_start[nNodes_Total],
+    exposeState_a=not exposeState_b,
+    exposeState_b=exposeState_b,
+/*
     modelStructure=if modelStructure == Modelica.Fluid.Types.ModelStructure.a_v_b
          then Modelica.Fluid.Types.ModelStructure.av_b elseif
         modelStructure == Modelica.Fluid.Types.ModelStructure.av_b then
         Modelica.Fluid.Types.ModelStructure.av_b else Modelica.Fluid.Types.ModelStructure.a_vb,
+*/
     allowFlowReversal=allowFlowReversal,
     energyDynamics=energyDynamics,
     massDynamics=massDynamics,
     momentumDynamics=momentumDynamics,
-    nV=nNodes_entryPipe_b,
     ps_start=ps_start[nNodes_Total + 1 - nNodes_entryPipe_b:nNodes_Total],
     T_a_start=Ts_start[nNodes_Total + 1 - nNodes_entryPipe_b],
     T_b_start=Ts_start[nNodes_Total],
     Ts_start=Ts_start[nNodes_Total + 1 - nNodes_entryPipe_b:nNodes_Total],
-    m_flow_a_start=m_flow_start,
-    dheight=dheight_entryPipe_b,
-    height_a=nozzle_b.height_a)
+    m_flow_a_start=m_flow_start)
     "This pipe serves to capture the pressure drop not captued by the nozzle dP (i.e., length and static dP), if any, for nozzle_b"
     annotation (Placement(transformation(
         extent={{-10,10},{10,-10}},
